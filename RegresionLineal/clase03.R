@@ -1,6 +1,6 @@
 # Cargamos las librerias ----
 
-#Vamos a cargar las librerias con "pacman"
+#Vamos a cargar las librerías con "pacman"
 
 #Verificamos si esta instalado la libreria pacman, en caso que no lo este, se instala
 if (! ('pacman' %in% installed.packages())) install.packages('pacman')
