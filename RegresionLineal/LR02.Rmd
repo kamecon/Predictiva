@@ -1,0 +1,67 @@
+---
+title: "Regresión lineal simple con errores robustos a heterocedasticidad"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+pacman::p_load("haven", "rmdformats")
+caschool <- read_dta("Data/caschool.dta")
+```
+
+Si observamos la salida de la función `lm` en el caso del ejemplo del libro empleado en clase $Testscr=\beta_0+\beta_1STR+u$, observamos que hay algunas cifras que no coinciden con las del libro
+
+```{r lmr01}
+estimacion_01 <- lm(formula = testscr ~str, data = caschool)
+
+summary(estimacion_01)
+```
+
+Los errores estándar de los coeficientes $\beta$ estimados no coinciden. En el libro, el error estándar de $\beta_0$ es igual a 10,4 y el de $\beta_1$ igual a 0,52, mientras que en nuestro caso estos números son iguales a `r round(summary(estimacion_01)$coefficients[1,2],2)` y `r round(summary(estimacion_01)$coefficients[2,2],2)` respectivamente.
+
+Esto también afecta a los t-valores, p-valores y los intervalos de confianza para los coeficientes estimados. Recordemos este último:
+
+```{r confR01}
+confint(estimacion_01)
+```
+
+El intervalo de confianza para $\beta_1$ en el libro es de (-3,30,-1,26)
+
+La diferencia radica en que en el libro emplean _varianzas (errores estándar) robustos a heterocedasticidad_, cuya expresión viene dada por:
+
+$$Var(\hat{\beta_1})=\frac{Var[(X_i-\mu_x)u_i]}{n(\sigma^2_x)^2}$$
+Mientras que los errores estándar que vemos en la salida de la función `summary`se calculan a partir de la siguiente estimación de la varianza:
+
+$$Var(\hat{\beta_1})=\frac{\sigma^2_u}{n\sigma^2_x}$$
+
+Esta última expresión es válida solo en el caso en que los errores de la regresión sean _homocedásticos_, mientras que la primera es un caso general.
+
+Para obtener errores estándar robustos a heterocedasticidad en R, tenemos que llamar a un par de librerías y estimar los errores:
+
+```{r Lmr02}
+pacman::p_load("lmtest", "sandwich")
+
+coeftest(estimacion_01, vcov = vcovHC(estimacion_01, type = "HC0"))
+```
+
+Y observamos en la salida de la función `coeftest`como ahora si coinciden los errores estándar de los coeficientes con los del libro, y el estadístico t de contraste.
+
+Del mismo modo que hemos hecho con la función `summary`podemos acceder a los valores de la salida de la función `coeftest`
+
+```{r Lmr03}
+coeftest(estimacion_01, vcov = vcovHC(estimacion_01, type = "HC0"))[1,2]
+coeftest(estimacion_01, vcov = vcovHC(estimacion_01, type = "HC0"))[2,2]
+```
+
+Y por último, para obtener el intervalo de confianza, asignamos un nombre a la estimación y usamos la función `confint`
+
+```{r Lmr04}
+estimacion_01_Robusta <- coeftest(estimacion_01, vcov = vcovHC(estimacion_01, type = "HC0"), level = 0.99)
+confint(estimacion_01_Robusta)
+```
+
+Este intervalo si coincide con el del libro.

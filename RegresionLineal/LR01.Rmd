@@ -1,0 +1,182 @@
+---
+title: "Regresion Lineal Simple en R"
+author: "Kamal Romero"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  rmdformats::readthedown:
+    highlight: kate
+  html_document: 
+    toc: true
+    number_sections: true
+    theme: "yeti"
+  md_document:
+    variant: markdown_github
+  pdf_document: 
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("haven", "rmdformats")
+caschool <- read_dta("Data/caschool.dta")
+```
+
+
+El objetivo del siguiente documento es analizar como extraer la información relevante del output o salida de la función `lm`
+
+Lo siguiente no es más que una presentación sistemática de los contenidos de los códigos de este tema disponibles en el Blackboard de la asignatura y trabajados en clase
+
+# Resultados de la regresión lineal, la función summary
+
+Partimos del ejemplo del libro que busca relacionar los resultados de la prueba de aptitud con el ratio estudiantes por profesor:
+
+$$Testscr=\beta_0+\beta_1STR+u$$
+
+```{r lm01}
+estimacion_01 <- lm(formula = testscr ~str, data = caschool)
+
+summary(estimacion_01)
+```
+
+Deseamos poder extraer la información numérica del output de la función `summary()`
+
+## Coeficientes estimados
+
+El objeto `estimacion_01`es una lista, uno de los elementos de esta son los coeficientes estimados
+
+```{r lm02}
+estimacion_01$coefficients
+```
+
+Lo que estamos extrayendo es un vector
+
+```{r lm03}
+str(estimacion_01$coefficients)
+```
+
+Al ser un vector podemos acceder a sus elementos de la manera habitual con el operador `[`
+
+```{r lm04}
+estimacion_01$coefficients[1]
+estimacion_01$coefficients[2]
+```
+
+Le podemos asignar un nombre por si los queremos utilizar luego
+
+```{r lm05}
+beta_0 <- estimacion_01$coefficients[1]
+beta_1 <- estimacion_01$coefficients[2]
+beta_0
+beta_1
+```
+
+Aunque aparezca el nombre, podemos operar con ellos sin problema
+
+```{r lm06}
+beta_1 + beta_0
+beta_0 + beta_1
+```
+
+Vemos que _hereda_ el nombre del primer elemento, podemos prescindir de los nombres si queremos
+ 
+```{r lm07}
+beta_0 <- unname(estimacion_01$coefficients[1])
+beta_1 <- unname(estimacion_01$coefficients[2])
+beta_0
+beta_1
+```
+
+También podemos extraer los coeficientes con la función `coef()`
+
+```{r lm08}
+coef(estimacion_01)
+```
+## Acceder al $R^2$ y al ESR
+
+En este caso, tenemos que acceder a los atributos del objeto `summary(estimacion_01)`
+
+```{r lm09}
+attributes(summary(estimacion_01))
+```
+
+Accedemos al $R^2$ 
+
+```{r rsquared}
+summary(estimacion_01)$r.squared
+```
+
+Accedemos al ESR
+
+```{r ESR}
+summary(estimacion_01)$sigma
+```
+
+## Acceder a los errores estándar, t-valor y p-valor
+
+Inspeccionamos el atributo `coefficients` del objeto `summary(estimacion_01)` 
+
+```{r coef01}
+summary(estimacion_01)$coefficients
+```
+
+Observamos que además de los coeficientes estimados de la regresión, tenemos todo lo demás que estamos buscando, los errores estándar, los t-valores y los p-valores
+
+`summary(estimacion_01)$coefficients` es una matriz de dimensión 2x4
+
+```{r coef02}
+class(summary(estimacion_01)$coefficients)
+dim(summary(estimacion_01)$coefficients)
+
+```
+
+Sabiendo esto, podemos extraer los elementos deseados
+
+Error estándar de $\beta_0$
+```{r coef03}
+summary(estimacion_01)$coefficients[1,2]
+```
+
+Error estándar de $\beta_1$
+```{r coef04}
+summary(estimacion_01)$coefficients[2,2]
+```
+
+Estadístico t para contrastar que $\beta_1 = 0$
+```{r coef05}
+summary(estimacion_01)$coefficients[2,3]
+```
+
+p-valor del contraste de $\beta_1$
+```{r coef06}
+summary(estimacion_01)$coefficients[2,4]
+```
+
+**NOTA:** Si desea comparar el estadístico t con el valor critico, lo puede hacer con la función `qt()`
+
+Al 99% de confianza (0.05 de probabilidad en cada cola en el caso del contraste bilateral), el estadístico de contraste seria
+
+```{r coef07}
+qt(p = 0.995, df = 418)
+```
+
+418 son los grados de libertad igual al número de observaciones menos el número de parámetros a estimar. Puede verse esta información en `summary(estimacion_01)` o extraer el atributo de la misma
+
+```{r coef08}
+summary(estimacion_01)$df[2]
+```
+
+# Intervalos de confianza de los coeficientes estimados
+
+Con la función `confint()`se obtienen los intervalos de confianza para los coeficientes estimados de la función `lm()`
+
+```{r conf01}
+confint(estimacion_01)
+```
+
+Por defecto la función `confint()`calcula el intervalo para un 95% de confianza. Podemos modificar el nivel de confianza con el argumento `level`. Por ejemplo, para un 99% de confianza:
+
+```{r conf02}
+confint(estimacion_01, level = 0.99)
+```
+
