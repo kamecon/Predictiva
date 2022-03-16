@@ -14,7 +14,7 @@ pacman::p_load("haven")
 #E.4.2
 
 #Leemos los datos (Recuerde cambiar la ruta)
-ratings <- read_dta("TeachingRatings.dta")
+ratings <- read_dta("RegresionLineal/Exercises/Data/TeachingRatings.dta")
 
 #Inspeccionamos los datos
 str(ratings)
@@ -29,7 +29,7 @@ summary(modelo_ratings)
 #E.4.4
 
 #Leemos los datos (Recuerde cambiar la ruta)
-growth <- read_dta("Growth.dta")
+growth <- read_dta("RegresionLineal/Exercises/Data/Growth.dta")
 
 #Inspeccionamos los datos
 str(growth)
