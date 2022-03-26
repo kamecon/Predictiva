@@ -5,10 +5,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="generator" content="pandoc" />
 
+        <meta name="author" content="Kamal Romero" />
     
-        <meta name="date" content="2022-03-26" />
     
-    <title>Regresión lineal simple con errores robustos a heterocedasticidad</title>
+    <title>Contraste de hipótesis global en una regresión lineal con errores robustos a heterocedasticidad</title>
 
         <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1626,18 +1626,31 @@ src: url(data:application/font-sfnt;base64,AAEAAAARAQAABAAQR0RFRgs+Cz8AAjwQAAAAQ
          
    
         
-      <h1 class="title">Regresión lineal simple con errores robustos a
-heterocedasticidad</h1>
+      <h1 class="title">Contraste de hipótesis global en una regresión
+lineal con errores robustos a heterocedasticidad</h1>
       
          <!-- readthedown authors -->
    <div id="sidebar">
-    <h2><a href="#content">Regresión lineal simple con errores robustos
-a heterocedasticidad</a></h2>
+    <h2><a href="#content">Contraste de hipótesis global en una
+regresión lineal con errores robustos a heterocedasticidad</a></h2>
     <div id="toc">
-      
+      <ul>
+      <li><a href="#introducción">Introducción</a></li>
+      <li><a href="#contraste-de-hipótesis-global">Contraste de
+      hipótesis global</a>
+      <ul>
+      <li><a href="#regresión-poblacional-no-restringida-bajo-h_1">Regresión
+      poblacional <strong>no restringida</strong> (bajo <span class="math inline">\(H_1\)</span>)</a></li>
+      <li><a href="#regresión-poblacional-restringida-bajo-h_0">Regresión
+      poblacional <strong>restringida</strong> (bajo <span class="math inline">\(H_0\)</span>)</a></li>
+      </ul></li>
+      </ul>
     </div>
     <div id="postamble" data-toggle="wy-nav-shift" class="status">
-                  <p class="date"><span class="glyphicon glyphicon-calendar"></span> 2022-03-26</p>
+                  <p class="author"><span class="glyphicon glyphicon-user"></span> Kamal
+Romero</p>
+                        <p class="date"><span class="glyphicon glyphicon-calendar"></span> marzo
+26, 2022</p>
           </div>
    </div>
      
@@ -1647,85 +1660,653 @@ a heterocedasticidad</a></h2>
    
 <!-- Don't indent these lines or it will mess pre blocks indentation --> 
 <div id="main">
-<p>Si observamos la salida de la función <code>lm</code> en el caso del
-ejemplo del libro empleado en clase <span class="math inline">\(Testscr=\beta_0+\beta_1STR+u\)</span>, observamos
-que hay algunas cifras que no coinciden con las del libro</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>estimacion_01 <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> testscr <span class="sc">~</span>str, <span class="at">data =</span> caschool)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(estimacion_01)</span></code></pre></div>
+<div id="introducción" class="section level1">
+<h1>Introducción</h1>
+<p>En un material anterior se explicó como obtener errores estándar
+robustos a heterocedasticidad en el contexto de un contraste de
+hipótesis de los parámetros individuales del modelo (los “betas”)</p>
+<p>Asimismo, en una sesión posterior, se trabajó como presentar los
+resultados del modelo de una manera más amigable que con la función
+<code>summary</code>, donde podíamos indicar que deseábamos una
+estimación <strong>robusta</strong></p>
+<p>A continuación, mostramos como estimar estadísticos F de forma
+robusta, para poder usarlos en contrastes de significación global</p>
+<p>Usamos los ejemplos del capítulo 07 del libro de Stock y Watson</p>
+</div>
+<div id="contraste-de-hipótesis-global" class="section level1">
+<h1>Contraste de hipótesis global</h1>
+<p>En el libro se realiza un contraste global con dos restricciones
+sobre una regresión lineal con tres regresores</p>
+<div id="regresión-poblacional-no-restringida-bajo-h_1" class="section level2">
+<h2>Regresión poblacional <strong>no restringida</strong> (bajo <span class="math inline">\(H_1\)</span>)</h2>
+<p><span class="math display">\[TestScore = \beta_0 + \beta_1STR_i +
+\beta_2 Expn_i + \beta_3 PctEL_i + u_i\]</span></p>
+</div>
+<div id="regresión-poblacional-restringida-bajo-h_0" class="section level2">
+<h2>Regresión poblacional <strong>restringida</strong> (bajo <span class="math inline">\(H_0\)</span>)</h2>
+<p><span class="math display">\[TestScore = \beta_0 + \beta_3 PctEL_i +
+u_i\]</span></p>
+<p>El número de restricciones bajo <span class="math inline">\(H_0\)</span> es <span class="math inline">\(q=2\)</span></p>
+<p>Primero, estimamos de forma robusta (con el argumento
+<code>robust</code> de la función <code>summ</code>) los modelos
+anteriores</p>
+<p>El modelo sin restringir</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>modelo_sr <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">data =</span> caschool, testscr <span class="sc">~</span> str <span class="sc">+</span> expn_stu <span class="sc">+</span> el_pct)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summ</span>(modelo_sr, <span class="at">digits =</span> <span class="dv">4</span>, <span class="at">robust =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Observations
+</td>
+<td style="text-align:right;">
+420
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Dependent variable
+</td>
+<td style="text-align:right;">
+testscr
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Type
+</td>
+<td style="text-align:right;">
+OLS linear regression
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+F(3,416)
+</td>
+<td style="text-align:right;">
+107.4547
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+R²
+</td>
+<td style="text-align:right;">
+0.4366
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Adj. R²
+</td>
+<td style="text-align:right;">
+0.4325
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;border-bottom: 0;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Est.
+</th>
+<th style="text-align:right;">
+S.E.
+</th>
+<th style="text-align:right;">
+t val.
+</th>
+<th style="text-align:right;">
+p
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+649.5779
+</td>
+<td style="text-align:right;">
+15.4583
+</td>
+<td style="text-align:right;">
+42.0212
+</td>
+<td style="text-align:right;">
+0.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+str
+</td>
+<td style="text-align:right;">
+-0.2864
+</td>
+<td style="text-align:right;">
+0.4821
+</td>
+<td style="text-align:right;">
+-0.5941
+</td>
+<td style="text-align:right;">
+0.5528
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+expn_stu
+</td>
+<td style="text-align:right;">
+0.0039
+</td>
+<td style="text-align:right;">
+0.0016
+</td>
+<td style="text-align:right;">
+2.4469
+</td>
+<td style="text-align:right;">
+0.0148
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+el_pct
+</td>
+<td style="text-align:right;">
+-0.6560
+</td>
+<td style="text-align:right;">
+0.0318
+</td>
+<td style="text-align:right;">
+-20.6397
+</td>
+<td style="text-align:right;">
+0.0000
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> Standard errors: Robust, type = HC1
+</td>
+</tr>
+</tfoot>
+</table>
+<p>El modelo restringido</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>modelo_r <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">data =</span> caschool, testscr <span class="sc">~</span> el_pct)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summ</span>(modelo_r, <span class="at">digits =</span> <span class="dv">4</span>, <span class="at">robust =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Observations
+</td>
+<td style="text-align:right;">
+420
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Dependent variable
+</td>
+<td style="text-align:right;">
+testscr
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Type
+</td>
+<td style="text-align:right;">
+OLS linear regression
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+F(1,418)
+</td>
+<td style="text-align:right;">
+296.4022
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+R²
+</td>
+<td style="text-align:right;">
+0.4149
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Adj. R²
+</td>
+<td style="text-align:right;">
+0.4135
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;border-bottom: 0;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Est.
+</th>
+<th style="text-align:right;">
+S.E.
+</th>
+<th style="text-align:right;">
+t val.
+</th>
+<th style="text-align:right;">
+p
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+664.7394
+</td>
+<td style="text-align:right;">
+0.9740
+</td>
+<td style="text-align:right;">
+682.4578
+</td>
+<td style="text-align:right;">
+0.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+el_pct
+</td>
+<td style="text-align:right;">
+-0.6712
+</td>
+<td style="text-align:right;">
+0.0321
+</td>
+<td style="text-align:right;">
+-20.8946
+</td>
+<td style="text-align:right;">
+0.0000
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> Standard errors: Robust, type = HC1
+</td>
+</tr>
+</tfoot>
+</table>
+<p>Realizamos el contraste F con las dos restricciones impuestas arriba.
+Para eso introducimos la función <code>waldtest</code> de la librería
+<code>lmtest</code></p>
+<p>Los dos primeros argumentos de la función son los modelos a comparar,
+el tercer argumento (<code>vcov</code>) es la manera como se estima la
+matriz de varianzas y covarianzas, que en nuestro caso que deseamos
+errores robustos, utilizamos la función <code>vcovHC</code> de la
+librería <code>sandwich</code>.</p>
+<p>Veamos la ayuda de la función <code>vcovHC</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>?vcovHC</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(modelo_sr, modelo_r, <span class="at">vcov =</span> <span class="fu">vcovHC</span>(modelo_sr, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>))</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align:right;">
+Res.Df
+</th>
+<th style="text-align:right;">
+Df
+</th>
+<th style="text-align:right;">
+F
+</th>
+<th style="text-align:right;">
+Pr(&gt;F)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+416
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+418
+</td>
+<td style="text-align:right;">
+-2
+</td>
+<td style="text-align:right;">
+5.433727
+</td>
+<td style="text-align:right;">
+0.0046823
+</td>
+</tr>
+</tbody>
+</table>
+<p>En el terminal de RStudio se vería así</p>
+<pre><code>## Wald test
+## 
+## Model 1: testscr ~ str + expn_stu + el_pct
+## Model 2: testscr ~ el_pct
+##   Res.Df Df      F   Pr(&gt;F)   
+## 1    416                      
+## 2    418 -2 5.4337 0.004682 **
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>El estadístico F tiene un valor de 5.43 (ver página 161 del libro),
+el p-valor nos indica que se rechaza la hipótesis nula <span class="math inline">\(\beta_1=\beta_2=0\)</span>. El valor crítico al 1%
+de la función F con 2 y 416 grados de libertad es:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">qf</span>(<span class="at">p =</span> <span class="fl">0.99</span>, <span class="at">df1 =</span> <span class="dv">2</span>, <span class="at">df2 =</span> <span class="dv">416</span>)</span></code></pre></div>
+<pre><code>## [1] 4.656528</code></pre>
+<p>Veamos cual sería el valor del estadístico F no robusto a
+heterocedasticidad, para eso obviamos el argumento <code>vcov</code> en
+la función <code>waldtest</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(modelo_sr, modelo_r)</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align:right;">
+Res.Df
+</th>
+<th style="text-align:right;">
+Df
+</th>
+<th style="text-align:right;">
+F
+</th>
+<th style="text-align:right;">
+Pr(&gt;F)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+416
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+418
+</td>
+<td style="text-align:right;">
+-2
+</td>
+<td style="text-align:right;">
+8.010126
+</td>
+<td style="text-align:right;">
+0.000386
+</td>
+</tr>
+</tbody>
+</table>
+<p>El valor del estadístico F no robusto es 8.01, (ver página 161 del
+libro), distinto al del valor robusto a heterocedasticidad.</p>
+<p>La función <code>summary</code>muestra un estadístico F que por
+defecto asume que en el modelo restringido todos los betas son iguales a
+cero excepto el que corresponde al intercepto o constante.</p>
+<p>Para realizar lo anterior, estimamos un modelo con solo una constante
+del siguiente modo:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>modelo_rtodas <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">data =</span> caschool, testscr <span class="sc">~</span> <span class="dv">1</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summ</span>(modelo_rtodas,  <span class="at">digits =</span> <span class="dv">4</span>, <span class="at">robust =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Observations
+</td>
+<td style="text-align:right;">
+420
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Dependent variable
+</td>
+<td style="text-align:right;">
+testscr
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+Type
+</td>
+<td style="text-align:right;">
+OLS linear regression
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;border-bottom: 0;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Est.
+</th>
+<th style="text-align:right;">
+S.E.
+</th>
+<th style="text-align:right;">
+t val.
+</th>
+<th style="text-align:right;">
+p
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+654.1565
+</td>
+<td style="text-align:right;">
+0.9297
+</td>
+<td style="text-align:right;">
+703.6149
+</td>
+<td style="text-align:right;">
+0.0000
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> Standard errors: Robust, type = HC1
+</td>
+</tr>
+</tfoot>
+</table>
+<p>Realizamos el contraste F</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(modelo_sr, modelo_rtodas, <span class="at">vcov =</span> <span class="fu">vcovHC</span>(modelo_sr, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>))</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align:right;">
+Res.Df
+</th>
+<th style="text-align:right;">
+Df
+</th>
+<th style="text-align:right;">
+F
+</th>
+<th style="text-align:right;">
+Pr(&gt;F)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+416
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+419
+</td>
+<td style="text-align:right;">
+-3
+</td>
+<td style="text-align:right;">
+147.2037
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table>
+<p>Lo hacemos en el caso no robusto, para poder compararlo con la salida
+de la función <code>summary</code></p>
+<p>Realizamos el contraste F</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(modelo_sr, modelo_rtodas)</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align:right;">
+Res.Df
+</th>
+<th style="text-align:right;">
+Df
+</th>
+<th style="text-align:right;">
+F
+</th>
+<th style="text-align:right;">
+Pr(&gt;F)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+416
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+419
+</td>
+<td style="text-align:right;">
+-3
+</td>
+<td style="text-align:right;">
+107.4547
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table>
+<p>Vemos la salida de la función <code>summary</code> del modelo sin
+restringir</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(modelo_sr)</span></code></pre></div>
 <pre><code>## 
 ## Call:
-## lm(formula = testscr ~ str, data = caschool)
+## lm(formula = testscr ~ str + expn_stu + el_pct, data = caschool)
 ## 
 ## Residuals:
 ##     Min      1Q  Median      3Q     Max 
-## -47.727 -14.251   0.483  12.822  48.540 
+## -51.340 -10.111   0.293  10.318  43.181 
 ## 
 ## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) 698.9330     9.4675  73.825  &lt; 2e-16 ***
-## str          -2.2798     0.4798  -4.751 2.78e-06 ***
+##               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 649.577947  15.205719  42.719  &lt; 2e-16 ***
+## str          -0.286399   0.480523  -0.596  0.55149    
+## expn_stu      0.003868   0.001412   2.739  0.00643 ** 
+## el_pct       -0.656023   0.039106 -16.776  &lt; 2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 18.58 on 418 degrees of freedom
-## Multiple R-squared:  0.05124,    Adjusted R-squared:  0.04897 
-## F-statistic: 22.58 on 1 and 418 DF,  p-value: 2.783e-06</code></pre>
-<p>Los errores estándar de los coeficientes <span class="math inline">\(\beta\)</span> estimados no coinciden. En el
-libro, el error estándar de <span class="math inline">\(\beta_0\)</span>
-es igual a 10,4 y el de <span class="math inline">\(\beta_1\)</span>
-igual a 0,52, mientras que en nuestro caso estos números son iguales a
-9.47 y 0.48 respectivamente.</p>
-<p>Esto también afecta a los t-valores, p-valores y los intervalos de
-confianza para los coeficientes estimados. Recordemos este último:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(estimacion_01)</span></code></pre></div>
-<pre><code>##                 2.5 %     97.5 %
-## (Intercept) 680.32313 717.542779
-## str          -3.22298  -1.336637</code></pre>
-<p>El intervalo de confianza para <span class="math inline">\(\beta_1\)</span> en el libro es de
-(-3,30,-1,26)</p>
-<p>La diferencia radica en que en el libro emplean <em>varianzas
-(errores estándar) robustos a heterocedasticidad</em>, cuya expresión
-viene dada por:</p>
-<p><span class="math display">\[Var(\hat{\beta_1})=\frac{Var[(X_i-\mu_x)u_i]}{n(\sigma^2_x)^2}\]</span>
-Mientras que los errores estándar que vemos en la salida de la función
-<code>summary</code>se calculan a partir de la siguiente estimación de
-la varianza:</p>
-<p><span class="math display">\[Var(\hat{\beta_1})=\frac{\sigma^2_u}{n\sigma^2_x}\]</span></p>
-<p>Esta última expresión es válida solo en el caso en que los errores de
-la regresión sean <em>homocedásticos</em>, mientras que la primera es un
-caso general.</p>
-<p>Para obtener errores estándar robustos a heterocedasticidad en R,
-tenemos que llamar a un par de librerías y estimar los errores:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(<span class="st">&quot;lmtest&quot;</span>, <span class="st">&quot;sandwich&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">coeftest</span>(estimacion_01, <span class="at">vcov =</span> <span class="fu">vcovHC</span>(estimacion_01, <span class="at">type =</span> <span class="st">&quot;HC0&quot;</span>))</span></code></pre></div>
-<pre><code>## 
-## t test of coefficients:
-## 
-##              Estimate Std. Error t value  Pr(&gt;|t|)    
-## (Intercept) 698.93295   10.33965  67.597 &lt; 2.2e-16 ***
-## str          -2.27981    0.51825  -4.399 1.382e-05 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<p>Y observamos en la salida de la función <code>coeftest</code>como
-ahora si coinciden los errores estándar de los coeficientes con los del
-libro, y el estadístico t de contraste.</p>
-<p>Del mismo modo que hemos hecho con la función
-<code>summary</code>podemos acceder a los valores de la salida de la
-función <code>coeftest</code></p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coeftest</span>(estimacion_01, <span class="at">vcov =</span> <span class="fu">vcovHC</span>(estimacion_01, <span class="at">type =</span> <span class="st">&quot;HC0&quot;</span>))[<span class="dv">1</span>,<span class="dv">2</span>]</span></code></pre></div>
-<pre><code>## [1] 10.33965</code></pre>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coeftest</span>(estimacion_01, <span class="at">vcov =</span> <span class="fu">vcovHC</span>(estimacion_01, <span class="at">type =</span> <span class="st">&quot;HC0&quot;</span>))[<span class="dv">2</span>,<span class="dv">2</span>]</span></code></pre></div>
-<pre><code>## [1] 0.5182509</code></pre>
-<p>Y por último, para obtener el intervalo de confianza, asignamos un
-nombre a la estimación y usamos la función <code>confint</code></p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>estimacion_01_Robusta <span class="ot">&lt;-</span> <span class="fu">coeftest</span>(estimacion_01, <span class="at">vcov =</span> <span class="fu">vcovHC</span>(estimacion_01, <span class="at">type =</span> <span class="st">&quot;HC0&quot;</span>), <span class="at">level =</span> <span class="fl">0.99</span>)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(estimacion_01_Robusta)</span></code></pre></div>
-<pre><code>##                  2.5 %     97.5 %
-## (Intercept) 678.608756 719.257149
-## str          -3.298511  -1.261106</code></pre>
-<p>Este intervalo si coincide con el del libro.</p>
+## Residual standard error: 14.35 on 416 degrees of freedom
+## Multiple R-squared:  0.4366, Adjusted R-squared:  0.4325 
+## F-statistic: 107.5 on 3 and 416 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>Observamos que el valor del estadístico F de las funciones
+<code>waldtest</code> y la salida de <code>summary</code> son los
+mismos.</p>
+</div>
+</div>
 </div>
 
    

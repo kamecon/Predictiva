@@ -1,0 +1,148 @@
+---
+title: "Contraste de hipótesis global  en una regresión lineal con errores robustos a heterocedasticidad"
+author: "Kamal Romero"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+  html_document: 
+    toc: true
+    number_sections: true
+    theme: "yeti"
+  md_document:
+    variant: markdown_github
+  pdf_document: 
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+pacman::p_load("haven", "rmdformats", "jtools","sandwich", "lmtest","kableExtra")
+caschool <- read_dta("Data/caschool.dta")
+```
+
+# Introducción
+
+En un material anterior se explicó como obtener errores estándar robustos a heterocedasticidad en el contexto de un contraste de hipótesis de los parámetros individuales del modelo (los "betas")
+
+Asimismo, en una sesión posterior, se trabajó como presentar los resultados del modelo de una manera más amigable que con la función `summary`, donde podíamos indicar que deseábamos una estimación **robusta**
+
+A continuación, mostramos como estimar estadísticos F de forma robusta, para poder usarlos en contrastes de significación global
+
+Usamos los ejemplos del capítulo 07 del libro de Stock y Watson
+
+# Contraste de hipótesis global
+
+En el libro se realiza un contraste global con dos restricciones sobre una regresión lineal con tres regresores
+
+## Regresión poblacional **no restringida** (bajo $H_1$)
+
+$$TestScore = \beta_0 + \beta_1STR_i + \beta_2 Expn_i + \beta_3 PctEL_i + u_i$$
+
+## Regresión poblacional **restringida** (bajo $H_0$)
+
+$$TestScore = \beta_0 + \beta_3 PctEL_i + u_i$$
+
+El número de restricciones bajo $H_0$ es $q=2$
+
+Primero, estimamos de forma robusta (con el argumento `robust` de la función `summ`) los modelos anteriores
+
+El modelo sin restringir
+
+```{r msr}
+modelo_sr <- lm(data = caschool, testscr ~ str + expn_stu + el_pct)
+summ(modelo_sr, digits = 4, robust = "HC1")
+```
+
+El modelo restringido
+
+```{r mr}
+modelo_r <- lm(data = caschool, testscr ~ el_pct)
+summ(modelo_r, digits = 4, robust = "HC1")
+```
+
+Realizamos el contraste F con las dos restricciones impuestas arriba. Para eso introducimos la función `waldtest` de la librería
+`lmtest`
+
+Los dos primeros argumentos de la función son los modelos a comparar, el tercer argumento (`vcov`) es la manera como se estima la matriz de varianzas y covarianzas, que en nuestro caso que deseamos errores robustos, utilizamos la función `vcovHC` de la librería `sandwich`. 
+
+Veamos la ayuda de la función `vcovHC`
+
+```{r vocvHC, eval=FALSE}
+?vcovHC
+```
+
+
+```{r F, eval=FALSE}
+waldtest(modelo_sr, modelo_r, vcov = vcovHC(modelo_sr, type = "HC1"))
+```
+
+```{r F2, echo=FALSE}
+kable(waldtest(modelo_sr, modelo_r, vcov = vcovHC(modelo_sr, type = "HC1")))
+```
+
+En el terminal de RStudio se vería así
+
+```{r F3, echo=FALSE}
+waldtest(modelo_sr, modelo_r, vcov = vcovHC(modelo_sr, type = "HC1"))
+```
+
+El estadístico F tiene un valor de `r round(waldtest(modelo_sr, modelo_r, vcov = vcovHC(modelo_sr, type = "HC1"))$F[2], 2)` (ver página 161 del libro), el p-valor nos indica que se rechaza la hipótesis nula $\beta_1=\beta_2=0$. El valor crítico al 1% de la función F con 2 y 416 grados de libertad es:
+
+```{r F4}
+qf(p = 0.99, df1 = 2, df2 = 416)
+```
+
+Veamos cual sería el valor del estadístico F no robusto a heterocedasticidad, para eso obviamos el argumento `vcov` en la función `waldtest`
+
+```{r F5, eval=FALSE}
+waldtest(modelo_sr, modelo_r)
+```
+
+```{r F6, echo=FALSE}
+kable(waldtest(modelo_sr, modelo_r))
+```
+
+El valor del estadístico F no robusto es `r round(waldtest(modelo_sr, modelo_r)$F[2], 2)`, (ver página 161 del libro), distinto al del valor robusto a heterocedasticidad.
+
+La función `summary`muestra un estadístico F que por defecto asume que en el modelo restringido todos los betas son iguales a cero excepto el que corresponde al intercepto o constante.
+
+Para realizar lo anterior, estimamos un modelo con solo una constante del siguiente modo:
+
+```{r rall}
+modelo_rtodas <- lm(data = caschool, testscr ~ 1)
+summ(modelo_rtodas,  digits = 4, robust = "HC1")
+```
+
+Realizamos el contraste F
+
+```{r F7, eval=FALSE}
+waldtest(modelo_sr, modelo_rtodas, vcov = vcovHC(modelo_sr, type = "HC1"))
+```
+
+```{r F8, echo=FALSE}
+kable(waldtest(modelo_sr, modelo_rtodas, vcov = vcovHC(modelo_sr, type = "HC1")))
+```
+
+Lo hacemos en el caso no robusto, para poder compararlo con la salida de la función `summary`
+
+Realizamos el contraste F
+
+```{r F9, eval=FALSE}
+waldtest(modelo_sr, modelo_rtodas)
+```
+
+```{r F10, echo=FALSE}
+kable(waldtest(modelo_sr, modelo_rtodas))
+```
+
+Vemos la salida de la función `summary` del modelo sin restringir
+```{r f11}
+summary(modelo_sr)
+```
+
+Observamos que el valor del estadístico F de las funciones `waldtest` y la salida de `summary` son los mismos.
+
+
