@@ -45,15 +45,31 @@ export_summs(modelo_cas01, modelo_cas03, robust=TRUE)
 #Tambien podemos asignar nombres a las variables, asi se entiende mejor la estimacion al presentarla a un tercero
 export_summs(modelo_cas01, modelo_cas03,
              robust=TRUE,
-             coefs = c("Alumnos por profesor" = "str",
+             coefs = c("Intercepto" = "(Intercept)",
+                       "Alumnos por profesor" = "str",
                        "% de estudiantes de inglés" = "el_pct")
              )
 
 #Y cambiar el nombre de los modelos
 export_summs(modelo_cas01, modelo_cas03,
              robust=TRUE,
-             coefs = c("Alumnos por profesor" = "str",
+             coefs = c("Intercepto" = "(Intercept)",
+                       "Alumnos por profesor" = "str",
                        "% de estudiantes de inglés" = "el_pct"),
              model.names = c("Modelo 1", "Modelo 2")
             )
 
+
+#Contraste de hipotesis conjunta(robusta)
+
+modelo_cas04 <- lm(data = caschool, testscr ~ str + el_pct + expn_stu)
+
+export_summs(modelo_cas04,
+             robust=TRUE,
+             coefs = c("Intercepto" = "(Intercept)",
+                       "Alumnos por profesor" = "str",
+                       "% de estudiantes de inglés" = "el_pct",
+                       "Gasto por alumno" = "expn_stu")
+)
+
+waldtest(modelo_cas01, modelo_cas03, vcov = vcovHC(modelo_cas03, type = "HC0"))
