@@ -1,3 +1,5 @@
+pacman::p_load(haven,jtools)
+
 #Cargamos los datos
 caschool <- read_dta("RegresionLineal/Data/caschool.dta")
 
