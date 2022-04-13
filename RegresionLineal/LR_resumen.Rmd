@@ -1,0 +1,88 @@
+---
+title: "Resumen laboratorios de Regresión Lineal"
+author: "Kamal Romero"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  rmdformats::readthedown:
+    highlight: kate
+  html_document: 
+    toc: true
+    number_sections: true
+    theme: "yeti"
+  md_document:
+    variant: markdown_github
+  pdf_document: 
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+# Laboratorio 1
+
+Lo primero que debemos hacer **siempre** es cargar o instalar las librerías que necesitemos para nuestro trabajo.
+
+En este curso hemos usado la librería `pacman`, la cual no solo carga la librería sino que la instala en caso que el usuario no la tenga instalada. Esto nos ahorra no solo los pasos de instalar y cargar, sino además instala la librería.
+
+Verificamos si esta instalado la libreria `pacman`, en caso que no lo este, se instala
+
+```{r lib01}
+if (! ('pacman' %in% installed.packages())) install.packages('pacman')
+```
+
+Una vez instalada la librería `pacman`, cargamos (o instalamos) las librerías necesarias para este laboratorio
+
+```{r lib02}
+pacman::p_load("haven", "AER")
+```
+
+## Primer ejemplo del libro de Stock y Watson
+
+### Dos formas de cargar los datos
+
+La primera es accediendo a la web del libro y descargar los datos. Acceder a esta [dirección](https://wps.pearsoned.com/aw_stock_ie_3/178/45691/11696965.cw/index.html) y pinchar en *"Replication Files"* en el menu de la barra izquierda, luego pinchar en *"Datasets for Replicating Empirical Results (Original Edition)"*. Descargar los datos *"California Test Score Data Used in Chapters 4-9"* en formato STATA.
+
+Vamos a practicar con el formato de STATA por dos motivos: debemos acostumbrarnos a trabajar con distintos formatos de datos mas alla del csv y xlsx, y porque STATA (de momento) sigue siendo el software estadístico predominante en organimos multilaterales y gubernamentales economicos, asi como en gran parte de la investigacion academica en economia
+
+Una vez descargados los datos, lo leemos con la libreria haven 
+
+```{r sw_1_01}
+caschool <- read_dta("Data/caschool.dta")
+```
+
+Vamos a replicar la regresion lineal del capitulo 4 trabajada en clase, la cual explicaba la calificación de la prueba de habilidad numerica y verbal en funcion del numero de alumnos por profesor
+
+En R la funcion `lm()` lleva a cabo la regresion lineal, veamos la ayuda
+
+```{r sw_1_02, eval=FALSE}
+?lm
+```
+
+De momento nos concentramos en los primeros dos argumentos de la funcion, formula y data
+
+
+```{r sw_1_03}
+lm(data = caschool, formula = testscr ~ str)
+```
+
+Vemos que con el argumento data de la función `lm`, indicamos de que fuente de datos se deben obtener las variables, otra forma es no indicar dentro de la funcion la fuente de los datos, y usar la funcion `attach` previo a `lm`
+
+```{r sw_1_04}
+attach(caschool)
+lm(testscr ~ str)
+```
+
+
+Asimismo, es deseable referenciar (asignar un nombre) el objeto que surge de la función `lm`
+
+```{r sw_1_05}
+estimacion_01 <- lm(testscr ~ str)
+estimacion_01
+```
+
+Más adelante aprenderemos más acerca de la funcion `lm`
+
+
