@@ -86,3 +86,156 @@ estimacion_01
 Más adelante aprenderemos más acerca de la funcion `lm`
 
 
+Para reproducir el gráfico del libro, usamos las funciones plot y abline
+
+```{r sw_1_06}
+plot(caschool$str, caschool$testscr)
+abline(estimacion_01)
+
+```
+
+Mas parecido al gráfico del libro
+
+```{r sw_1_07}
+plot(caschool$str, caschool$testscr,
+     ylim = c(600,720),   #limites del eje y
+     xlim = c(10,30),     #limites del eje x
+     pch = 20,            #forma del simbolo (circulo)
+     cex = 1.5,           #tamaño de la forma
+     ylab = "Test score", #titulo del eje y
+     xlab = "Student-teacher ratio", #titulo del eje x
+     axes = FALSE)        #Sin ejes
+axis(1) #eje x
+axis(2) #eje y
+abline(estimacion_01, col = "deepskyblue", lwd =3)
+
+```
+
+Si leen el documento de características de los datos, podran ver que las dos variables que hemos usado no estaban en los datos originales, sino que se han construido
+
+Esto es algo que deben hacer continuamente en cualquier trabajo empirico, por lo que deberian practicarlo
+
+Para esto, vamos a acceder los mismos datos de otra fuente, la libreraia AER (Applied Econometrics with R), accedamos al Vignette
+
+```{r sw_1_08}
+vignette("AER")
+```
+
+Veamos las bases de datos del libro de Stock y Watson
+
+
+```{r sw_1_09, echo=FALSE}
+help("StockWatson2007", package = "AER")
+```
+
+Cargamos los datos 
+
+```{r sw_1_10}
+data(CASchools)
+```
+
+Construimos las variables
+
+```{r sw_1_11}
+CASchools$STR <- CASchools$students/CASchools$teachers
+
+CASchools$Testscr <- (CASchools$math+CASchools$read)/2
+
+lm(formula = Testscr ~ STR, data = CASchools)
+
+```
+
+## Regresion Lineal: Población vs muestra
+
+El objetivo de la siguiente sección es replicar lo que ocurre si estimamos varias veces el mismo proceso, pero con distintas realizaciones del ruido. Aunque la analogía no es exacta, esto es algo similar a lo que ocurre si tomamos muestras repetidas de una población determinada, volveremos a esto en un próximo laboratorio. Ahora, lo que veremos, es que aún teniendo el modelo verdadero, el hecho de que exista un ruido en dicho modelo, hace que nuestras estimaciones sean solo una de muchas posibles
+
+Vamos a replicar la figura 3.3 del libro An [Introduction to Statistical Learning](https://www.statlearning.com/)
+
+Creamos la función del proceso generador de datos $Y=2+3x$
+
+```{r sw_1_11_2}
+x <- seq(-2, 2, length = 100)
+y <- 2 + 3*x
+```
+
+
+A partir de 100 realizaciones de una normal con media cero y desviación típica (`dt`) 1, creamos el modelo $Y=f(x)+u$, donde $f(x)=2+3x$
+
+```{r sw_1_12}
+dt <- 1
+y_02 <- y + rnorm(n = 100, mean = 0, sd = dt)
+df <- data.frame(x,y,y_02)
+```
+
+Estimamos el modelo a partir de los datos con ruido
+
+```{r sw_1_13}
+fit1 <- lm(formula = y_02 ~ x, data = df)
+fit1
+```
+
+
+Repetimos el procedimiento anterior con 100 realizaciones distintas del error y estimamos los parámetros
+
+```{r sw_1_14}
+y_03 <- y + rnorm(n = 100, mean = 0, sd = dt)
+df$y_03 <- y_03
+fit2 <- lm(formula = y_03 ~ x, data = df)
+fit2
+```
+
+
+Lo hacemos de nuevo
+
+```{r sw_1_15}
+y_04 <- y + rnorm(n = 100, mean = 0, sd = dt)
+df$y_04 <- y_04
+fit3 <- lm(formula = y_04 ~ x, data = df)
+fit3
+```
+
+
+Observamos que las estimaciones de la ordenada en el origen y la pendiente cambian con distintas realizaciones del ruido
+
+Graficamos el proceso generador de datos "real" con las estimaciones de la regresión lineal
+
+```{r sw_1_16}
+plot(x,y_02, ylab = "Y", main = "Figura 3.3 Libro ISLR")
+lines(x,y, col="red", lwd=4)
+lines(x, fitted(fit1), col=colors()[10*1], lwd=2)
+```
+
+
+Vamos a generar 10 nuevos modelos repitiendo lo anterior
+
+Creamos un data frame vacio de 100 filas (x's) y 10 columnas (modelos), para rellenarlo luego con las distintas versiones del modelo
+```{r sw_1_17}
+df2 <- data.frame(matrix(, nrow=100, ncol=10))
+```
+
+Añadimos una columna con la variable X
+
+```{r sw_1_18}
+df2$x <- x
+```
+
+Generamos los 10 distintos conjuntos de datos a partir del proceso generador de datos y el ruido
+
+Primero la columna Y
+```{r sw_1_19}
+for (i in 1:10) {
+  df2[,i] <- y + rnorm(100, 0, dt)
+}
+```
+
+
+Luego estimamos los 10 modelos y lo representamos graficamente
+```{r sw_1_20}
+plot(x,y_02, ylab = "Y", main = "Figura 3.3 Libro ISLR")
+for (i in 1:10) {
+  fitt <- lm(data = df2, formula = df2[,i]~x)
+  lines(x, fitted(fitt), col=colors()[12*i])
+}
+```
+
+
