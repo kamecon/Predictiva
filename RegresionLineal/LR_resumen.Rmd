@@ -239,3 +239,299 @@ for (i in 1:10) {
 ```
 
 
+# Laboratorio 2
+
+```{r sw_2_01}
+pacman::p_load("haven", "wooldridge")
+```
+
+## Practica regresion lineal 
+
+**Nota:**parte de esta sección se desarrolla con más detalle en el html *Regresion Lineal Simple en R*
+
+Volvemos al ejemplo del libro de Stock y Watson trabajado en la sección anterior
+
+```{r sw_2_02}
+caschool <- read_dta("RegresionLineal/Data/caschool.dta")
+
+estimacion_01 <- lm(formula = testscr ~str, data = caschool)
+
+summary(estimacion_01)
+
+```
+
+
+Accedemos a los coeficientes estimado del modelo
+
+```{r sw_2_03}
+estimacion_01$coefficients
+estimacion_01$coefficients[1]
+estimacion_01$coefficients[2]
+
+coef(estimacion_01)
+
+```
+
+
+**Adicional: Regresión robusta** Esto se desarrolla con más detalle en el HTML *Regresión lineal simple con errores robustos a heterocedasticidad*
+
+```{r sw_2_04}
+pacman::p_load("lmtest", "sandwich")
+
+coeftest(estimacion_01, vcov = vcovHC(estimacion_01, type = "HC0"))
+
+```
+
+
+Accedemos a mas informacion (R cuadrado, ESR)
+
+```{r sw_2_05}
+attributes(summary(estimacion_01))
+
+summary(estimacion_01)$r.squared
+summary(estimacion_01)$sigma
+
+```
+
+
+Construimos los residuos
+
+```{r sw_2_06}
+bhat <- estimacion_01$coefficients
+yhat <- estimacion_01$coefficients[1] + estimacion_01$coefficients[2]*caschool$str
+residuo <- caschool$testscr - yhat
+
+```
+
+Lo representamos gráficamente
+
+```{r sw_2_07}
+plot(residuo, type = "l")
+lines(estimacion_01$residuals, col="red")
+
+```
+
+Obtenemos las predicciones del modelo y los residuos, los organizamos en una tabla
+
+```{r sw_2_08}
+Str <-  caschool$str
+Test_scr <-  caschool$testscr
+testscr_hat <- estimacion_01$fitted.values
+u_hat <- estimacion_01$residuals
+
+```
+
+
+Usamos el comando cbind() para unir las columnas (vectores) de datos que hemos creado en el paso anterior
+
+```{r sw_2_09}
+tabla01 <- cbind(Str, Test_scr, testscr_hat, u_hat)
+
+head(tabla01)
+
+```
+
+A continuación, replicamos algunos de los ejemplos del libro de Wooldridge
+
+### Ejemplo 2.3 libro Wooldridge
+
+```{r sw_2_10}
+data(ceosal1)
+
+estimacion_wool01 <- lm(formula = salary ~roe, data = ceosal1)
+estimacion_wool01
+
+plot(ceosal1$roe, ceosal1$salary, xlab = "ROE", ylab = "Salario de los CEO's")
+abline(estimacion_wool01)
+
+```
+
+Los siguientes dos ejemplos deben completarlos siguiendo el paso anterior
+
+### Ejemplo 2.4 libro Wooldridge: Relacion entre salario (wage) y educacion (educ) (Tarea: inspeccionar los datos)
+
+
+```{r sw_2_11}
+data("wage1")
+
+estimacion_wool02 <- lm()
+estimacion_wool02
+
+plot(, xlab = , ylab = )
+abline(estimacion_wool02)
+
+```
+
+
+### Ejemplo 2.5 libro Wooldridge: Relacion entre resultado de las elecciones (voteA) y el gasto en la campaña electoral (shareA)
+
+
+```{r sw_2_12}
+data("vote1")
+
+?vote1
+
+```
+
+
+## Distribucion muestral de los betas 
+
+Al igual que en su curso pasado de estadística inferencial, en el cual se estimada un parámetro poblacional desconocido a partir de una muestra usando un estadístico, en este caso hacemos lo mismo cuando estimamos los parámetros de un modelo lineal.
+
+Del mismo modo que podíamos construir una distribución de estadísticos muestrales, partiendo del supuesto de que tomabamos muestras repetidas de una población dada, podemos crear una distribución de los betas estimados en un modelo lineal.
+
+A continuación vamos a tomar sub-muestras de las base de datos de caschool, y estimamos el modelo lineal $Testscr=\beta_0+\beta_1STR+u$ en cada una de ellas
+
+Comenzamos creando un vector vacio de betas, cuya dimesión es igual al número de sub-muestras (y veces que estimamos el modelo) que tomamos
+
+```{r sw_2_}
+beta_1 <- vector(length = 1000)
+```
+
+Para tomar una muestra (en este caso de tamaño 100) de un data frame, hacemos lo siguiente
+
+```{r sw_2_}
+sample(nrow(caschool),100)
+caschool[sample(nrow(caschool),100), ]
+
+```
+
+
+Rellenamos el vector con los betas estimados tomando solo una muestra de los datos originales
+
+```{r sw_2_}
+for (i in seq_along(beta_1)) {
+  estima <- lm(data =  caschool[sample(nrow(caschool),100),], formula = testscr ~str)
+  beta_1[i] <- estima$coefficients[2]
+}
+
+mean(beta_1)
+hist(beta_1)
+
+```
+
+
+**NOTA DE R**: En lugar de la función `seq_along`se puede usar una notación más convencional en otros lenguajes como for (i in 1..1000) o for (i in 1:1000) o for i in range(1000), que significa "repite esta operación en índices que van del 1 al 1000 en saltos de 1" que es una manera sofisticada de decir "repite esta operación 1000 veces" 
+
+**NOTA DE R**: En lugar de usar un bucle se puede usar la función `replicate`, una de las funciones de la familia `apply`, las cuales aplican una función a un vector de valores, que es lo mismo que hace un bucle cuando _aplica_ de manera repetida la misma operación a un conjunto de valores representado por un vector. En este caso estamos haciendo algo más sencillo, repetir un número de veces una instrucción encapsulada en una función, en este caso que nos extraiga de manera repetida una muestra de una población y calcule una regresion. Así que `replicate` en nuestro ejemplo repite 1000 veces la operación descrita arriba.
+
+Este tipo de operaciones se realiza muchas veces en estadística, ya que de esa manera hacemos _simulaciones_, repetir muchas veces realizaciones de una distribución de probabilidad o un fenómeno cuyo resultado sea incierto (lanzar un dado 50000 veces)
+
+```{r sw_2_}
+betas_1_2 <- replicate(expr = lm(data =  caschool[sample(nrow(caschool),100),], formula = testscr ~str)$coefficients[2],
+                          n = 1000)
+
+mean(betas_1_2)
+hist(betas_1_2)
+
+```
+
+# Laboratorio 3
+
+```{r sw_3_01}
+pacman::p_load("haven", "wooldridge")
+```
+
+## Regresion lineal:parametros
+
+**Nota:**parte de esta sección se desarrolla con más detalle en el html *Regresion Lineal Simple en R*
+
+Volvemos al ejemplo del libro de Stock y Watson trabajado en las secciones anteriores
+
+```{r sw_3_02}
+caschool <- read_dta("RegresionLineal/Data/caschool.dta")
+
+estimacion_01 <- lm(formula = testscr ~str, data = caschool)
+
+summary(estimacion_01)
+
+```
+
+Ya sabemos como acceder a los betas, el ESR y el $R^2$. Ahora vamos a acceder a los errores estándar de los parámetros, el t-valor y el p-valor
+
+Volvemos a los atributos de la función `summary`
+
+```{r sw3_}
+attributes(summary(estimacion_01))
+```
+
+Inspeccionamos el atributo coefficients
+
+```{r sw3_}
+summary(estimacion_01)$coefficients
+```
+
+
+Podemos ver que es una matriz de dimension 2,4
+
+```{r sw3_}
+class(summary(estimacion_01)$coefficients)
+dim(summary(estimacion_01)$coefficients)
+
+```
+
+Sabiendo esto, podemos extraer los elementos deseados
+
+Error estándar de $Beta_0$
+
+```{r sw3_}
+summary(estimacion_01)$coefficients[1,2]
+```
+
+Error estándar de Beta 1
+
+```{r sw3_}
+summary(estimacion_01)$coefficients[2,2]
+```
+
+Estadístico t para contrastar que Beta 1 es 0
+
+```{r sw3_}
+summary(estimacion_01)$coefficients[2,3]
+```
+
+p-valor del contraste de Beta 1
+
+```{r sw3_}
+summary(estimacion_01)$coefficients[2,4]
+```
+
+**NOTA**: Si desea comparar el estadístico t con el valor critico, lo puede hacer con la funcion `qt()`
+
+Al 99% de confianza (0.05 de probabilidad en cada cola en el caso del contraste bilateral), el estadistico de contraste seria
+
+
+```{r sw3_}
+qt(p = 0.995, df = 418)
+```
+
+
+
+Una manera de comapararlo
+
+
+```{r sw3_}
+t_valor <- summary(estimacion_01)$coefficients[2,3]
+contraste <- qt(p = 0.995, df = 418)
+ifelse(abs(t_valor)>abs(contraste),"Rechaza","Acepta")
+
+```
+
+
+Intervalos de confianza para $Beta_1$
+
+
+```{r sw3_}
+confint(estimacion_01)
+```
+
+Tambien se podria calcular "manualmente" lo anterior. Para eso, necesitariamos el numero de observaciones
+
+
+```{r sw3_}
+n <- nobs(estimacion_01)
+n
+
+```
+
+
