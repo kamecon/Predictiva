@@ -162,6 +162,7 @@ y <- 2 + 3*x
 A partir de 100 realizaciones de una normal con media cero y desviación típica (`dt`) 1, creamos el modelo $Y=f(x)+u$, donde $f(x)=2+3x$
 
 ```{r sw_1_12}
+set.seed(1234)
 dt <- 1
 y_02 <- y + rnorm(n = 100, mean = 0, sd = dt)
 df <- data.frame(x,y,y_02)
@@ -247,12 +248,12 @@ pacman::p_load("haven", "wooldridge")
 
 ## Practica regresion lineal 
 
-**Nota:**parte de esta sección se desarrolla con más detalle en el html *Regresion Lineal Simple en R*
+**Nota:** parte de esta sección se desarrolla con más detalle en el html *Regresion Lineal Simple en R*
 
 Volvemos al ejemplo del libro de Stock y Watson trabajado en la sección anterior
 
 ```{r sw_2_02}
-caschool <- read_dta("RegresionLineal/Data/caschool.dta")
+caschool <- read_dta("Data/caschool.dta")
 
 estimacion_01 <- lm(formula = testscr ~str, data = caschool)
 
@@ -273,7 +274,7 @@ coef(estimacion_01)
 ```
 
 
-**Adicional: Regresión robusta** Esto se desarrolla con más detalle en el HTML *Regresión lineal simple con errores robustos a heterocedasticidad*
+**Adicional: Regresión robusta** Esto se desarrolla con más detalle en el html *Regresión lineal simple con errores robustos a heterocedasticidad*
 
 ```{r sw_2_04}
 pacman::p_load("lmtest", "sandwich")
@@ -303,7 +304,7 @@ residuo <- caschool$testscr - yhat
 
 ```
 
-Lo representamos gráficamente
+Lo representamos gráficamente para verificar que nuestros residuos estimados coinciden con los estimados por la función `lm`
 
 ```{r sw_2_07}
 plot(residuo, type = "l")
@@ -322,7 +323,7 @@ u_hat <- estimacion_01$residuals
 ```
 
 
-Usamos el comando cbind() para unir las columnas (vectores) de datos que hemos creado en el paso anterior
+Usamos el comando `cbind()` para unir las columnas (vectores) de datos que hemos creado en el paso anterior
 
 ```{r sw_2_09}
 tabla01 <- cbind(Str, Test_scr, testscr_hat, u_hat)
@@ -351,7 +352,7 @@ Los siguientes dos ejemplos deben completarlos siguiendo el paso anterior
 ### Ejemplo 2.4 libro Wooldridge: Relacion entre salario (wage) y educacion (educ) (Tarea: inspeccionar los datos)
 
 
-```{r sw_2_11}
+```{r sw_2_11, eval=FALSE}
 data("wage1")
 
 estimacion_wool02 <- lm()
@@ -366,7 +367,7 @@ abline(estimacion_wool02)
 ### Ejemplo 2.5 libro Wooldridge: Relacion entre resultado de las elecciones (voteA) y el gasto en la campaña electoral (shareA)
 
 
-```{r sw_2_12}
+```{r sw_2_12, eval=FALSE}
 data("vote1")
 
 ?vote1
@@ -384,13 +385,14 @@ A continuación vamos a tomar sub-muestras de las base de datos de caschool, y e
 
 Comenzamos creando un vector vacio de betas, cuya dimesión es igual al número de sub-muestras (y veces que estimamos el modelo) que tomamos
 
-```{r sw_2_}
+```{r sw_2_13}
 beta_1 <- vector(length = 1000)
 ```
 
 Para tomar una muestra (en este caso de tamaño 100) de un data frame, hacemos lo siguiente
 
-```{r sw_2_}
+```{r sw_2_14}
+set.seed(1234)
 sample(nrow(caschool),100)
 caschool[sample(nrow(caschool),100), ]
 
@@ -399,7 +401,7 @@ caschool[sample(nrow(caschool),100), ]
 
 Rellenamos el vector con los betas estimados tomando solo una muestra de los datos originales
 
-```{r sw_2_}
+```{r sw_2_15}
 for (i in seq_along(beta_1)) {
   estima <- lm(data =  caschool[sample(nrow(caschool),100),], formula = testscr ~str)
   beta_1[i] <- estima$coefficients[2]
@@ -417,7 +419,7 @@ hist(beta_1)
 
 Este tipo de operaciones se realiza muchas veces en estadística, ya que de esa manera hacemos _simulaciones_, repetir muchas veces realizaciones de una distribución de probabilidad o un fenómeno cuyo resultado sea incierto (lanzar un dado 50000 veces)
 
-```{r sw_2_}
+```{r sw_2_16}
 betas_1_2 <- replicate(expr = lm(data =  caschool[sample(nrow(caschool),100),], formula = testscr ~str)$coefficients[2],
                           n = 1000)
 
@@ -432,14 +434,14 @@ hist(betas_1_2)
 pacman::p_load("haven", "wooldridge")
 ```
 
-## Regresion lineal:parametros
+## Regresion lineal: parámetros
 
-**Nota:**parte de esta sección se desarrolla con más detalle en el html *Regresion Lineal Simple en R*
+**Nota:** parte de esta sección se desarrolla con más detalle en el html *Regresion Lineal Simple en R*
 
 Volvemos al ejemplo del libro de Stock y Watson trabajado en las secciones anteriores
 
 ```{r sw_3_02}
-caschool <- read_dta("RegresionLineal/Data/caschool.dta")
+caschool <- read_dta("Data/caschool.dta")
 
 estimacion_01 <- lm(formula = testscr ~str, data = caschool)
 
@@ -451,20 +453,20 @@ Ya sabemos como acceder a los betas, el ESR y el $R^2$. Ahora vamos a acceder a 
 
 Volvemos a los atributos de la función `summary`
 
-```{r sw3_}
+```{r sw_3_03}
 attributes(summary(estimacion_01))
 ```
 
 Inspeccionamos el atributo coefficients
 
-```{r sw3_}
+```{r sw_3_04}
 summary(estimacion_01)$coefficients
 ```
 
 
 Podemos ver que es una matriz de dimension 2,4
 
-```{r sw3_}
+```{r sw_3_05}
 class(summary(estimacion_01)$coefficients)
 dim(summary(estimacion_01)$coefficients)
 
@@ -472,27 +474,27 @@ dim(summary(estimacion_01)$coefficients)
 
 Sabiendo esto, podemos extraer los elementos deseados
 
-Error estándar de $Beta_0$
+Error estándar de $\beta_0$
 
-```{r sw3_}
+```{r sw_3_06}
 summary(estimacion_01)$coefficients[1,2]
 ```
 
-Error estándar de Beta 1
+Error estándar de $\beta_1$
 
-```{r sw3_}
+```{r sw_3_07}
 summary(estimacion_01)$coefficients[2,2]
 ```
 
-Estadístico t para contrastar que Beta 1 es 0
+Estadístico t para contrastar que $\beta_1$ es 0
 
-```{r sw3_}
+```{r sw_3_08}
 summary(estimacion_01)$coefficients[2,3]
 ```
 
-p-valor del contraste de Beta 1
+p-valor del contraste de $\beta_1$
 
-```{r sw3_}
+```{r sw_3_09}
 summary(estimacion_01)$coefficients[2,4]
 ```
 
@@ -501,16 +503,13 @@ summary(estimacion_01)$coefficients[2,4]
 Al 99% de confianza (0.05 de probabilidad en cada cola en el caso del contraste bilateral), el estadistico de contraste seria
 
 
-```{r sw3_}
+```{r sw_3_10}
 qt(p = 0.995, df = 418)
 ```
 
-
-
 Una manera de comapararlo
 
-
-```{r sw3_}
+```{r sw_3_11}
 t_valor <- summary(estimacion_01)$coefficients[2,3]
 contraste <- qt(p = 0.995, df = 418)
 ifelse(abs(t_valor)>abs(contraste),"Rechaza","Acepta")
@@ -518,20 +517,147 @@ ifelse(abs(t_valor)>abs(contraste),"Rechaza","Acepta")
 ```
 
 
-Intervalos de confianza para $Beta_1$
+Intervalos de confianza para $\beta_1$
 
 
-```{r sw3_}
+```{r sw_3_12}
 confint(estimacion_01)
 ```
 
 Tambien se podria calcular "manualmente" lo anterior. Para eso, necesitariamos el numero de observaciones
 
 
-```{r sw3_}
+```{r sw_3_13}
 n <- nobs(estimacion_01)
 n
 
 ```
 
+
+# Laboratorio 4
+
+```{r sw_4_01}
+pacman::p_load("haven", "wooldridge")
+```
+
+
+## Motivación: Regresion lineal multiple
+
+Volvemos al ejemplo del libro de Stock y Watson trabajado en las secciones anteriores, y añadimos una variable adicional, el nivel de ingreso promedio del distrito escolar
+
+```{r sw_4_02}
+caschool <- read_dta("Data/caschool.dta")
+
+modelo_cas01 <- lm(data = caschool, testscr ~ str)
+summary(modelo_cas01)
+
+modelo_cas02 <- lm(data = caschool, testscr ~ str + avginc)
+summary(modelo_cas02)
+
+```
+
+Vemos como al añadir un nuevo regresor cambia el valor del parámetro $\beta_1$ que denota el efecto de *STR* sobre la calificación del examen
+
+## Ejemplo 3.2 libro Wooldridge pag. 76 (salario real por hora)
+
+526 observaciones sobre trabajadores en la base de datos WAGE1, las variables educ (años de educación), exper (años de experiencia en el mercado laboral) y tenure (años de antigüedad en el empleo actual) se incluyen en una ecuación para explicar log(wage)
+
+```{r sw_4_03}
+data("wage1")
+
+estimacion_wage <- lm(data = wage1, log(wage) ~ educ + exper + tenure)
+summary(estimacion_wage)
+
+```
+
+
+Estadistico de contraste
+
+```{r sw_4_04}
+qt(p = 0.975, df = 522)
+```
+
+p-valor
+
+```{r sw_4_05}
+pt(2.391, df = 522, lower.tail = FALSE)*2
+```
+
+## Regresión lineal multiple en notacion matricial
+
+Ejemplo sacado de este [libro](http://www.urfie.net/downloads03.html) (sería interesante revisar este libro para replicar en R los ejemplos del libro de Wooldridge)
+
+```{r sw_4_06}
+data(gpa1)
+```
+
+Tamaño de la muestra y numero de regresores
+
+```{r sw_4_07}
+n <- nrow(gpa1)
+k <- 2
+
+```
+
+Extraemos la variable independiente $y$
+
+```{r sw_4_08}
+y <- gpa1$colGPA
+```
+
+Construimos la matriz de regresores $X$ (en este caso 2) y añadimos una columna de unos (ver diapositiva 9)
+
+```{r sw_4_09}
+X <- cbind(1, gpa1$hsGPA, gpa1$ACT)
+```
+
+Inspeccionamos las primeras filas de  $X$:
+
+```{r sw_4_10}
+head(X)
+```
+
+Estimamos los betas usando la expresión de la diapositiva 18:
+
+```{r sw_4_11}
+beta_hat <- solve( t(X)%*%X ) %*% t(X)%*%y 
+beta_hat
+
+```
+
+Calculamos los residuos
+
+```{r sw_4_12}
+uhat <- y - X %*% beta_hat
+```
+
+Calculamos la varianza estimada de $u$ y el ESR:
+
+```{r sw_4_13}
+sigsqhat <- as.numeric( t(uhat) %*% uhat / (n-k-1) )
+ESR <- sqrt(sigsqhat) 
+sigsqhat
+ESR
+
+```
+
+
+Varianza estimada de los betas y su error estándar:
+
+```{r sw_4_14}
+Vbetahat <- sigsqhat * solve( t(X)%*%X )
+Vbetahat
+seBeta_hat <- sqrt( diag(Vbetahat))
+seBeta_hat
+
+```
+
+
+Verificamos los valores con los resultados de la estimación usando `lm`
+
+```{r sw_4_15}
+modelo_gpa01 <- lm(data = gpa1, formula = colGPA ~ hsGPA + ACT )
+summary(modelo_gpa01)
+
+```
 
