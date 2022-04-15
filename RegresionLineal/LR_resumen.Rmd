@@ -86,13 +86,15 @@ estimacion_01
 Más adelante aprenderemos más acerca de la funcion `lm`
 
 
-Para reproducir el gráfico del libro, usamos las funciones plot y abline
+Para reproducir el gráfico del libro, usamos las funciones `plot` y `abline`
 
 ```{r sw_1_06}
 plot(caschool$str, caschool$testscr)
 abline(estimacion_01)
 
 ```
+
+La función `abline` añade una línea recta a un gráfico, en este caso añade la línea que corresponde a los parámetros estimados por la función `lm` que hemos referenciado en `estimacion_01`
 
 Mas parecido al gráfico del libro
 
@@ -121,10 +123,10 @@ Para esto, vamos a acceder los mismos datos de otra fuente, la libreraia AER (Ap
 vignette("AER")
 ```
 
-Veamos las bases de datos del libro de Stock y Watson
+Veamos las bases de datos del libro de Stock y Watson (el resultado aparece en la pestaña de help)
 
 
-```{r sw_1_09, echo=FALSE}
+```{r sw_1_09, warning=FALSE}
 help("StockWatson2007", package = "AER")
 ```
 
@@ -134,7 +136,7 @@ Cargamos los datos
 data(CASchools)
 ```
 
-Construimos las variables
+Construimos las variables y estimamos el modelo
 
 ```{r sw_1_11}
 CASchools$STR <- CASchools$students/CASchools$teachers
@@ -149,7 +151,7 @@ lm(formula = Testscr ~ STR, data = CASchools)
 
 El objetivo de la siguiente sección es replicar lo que ocurre si estimamos varias veces el mismo proceso, pero con distintas realizaciones del ruido. Aunque la analogía no es exacta, esto es algo similar a lo que ocurre si tomamos muestras repetidas de una población determinada, volveremos a esto en un próximo laboratorio. Ahora, lo que veremos, es que aún teniendo el modelo verdadero, el hecho de que exista un ruido en dicho modelo, hace que nuestras estimaciones sean solo una de muchas posibles
 
-Vamos a replicar la figura 3.3 del libro An [Introduction to Statistical Learning](https://www.statlearning.com/)
+Vamos a replicar la figura 3.3 del libro [An Introduction to Statistical Learning](https://www.statlearning.com/)
 
 Creamos la función del proceso generador de datos $Y=2+3x$
 
@@ -159,7 +161,7 @@ y <- 2 + 3*x
 ```
 
 
-A partir de 100 realizaciones de una normal con media cero y desviación típica (`dt`) 1, creamos el modelo $Y=f(x)+u$, donde $f(x)=2+3x$
+A partir de 100 realizaciones de una normal con media cero y desviación típica (`dt`) 1, creamos el modelo $Y=f(x)+u$, donde $f(x)=2+3x$. Almacenamos los valores de $x$, $y$ y el nuevo $y$ estimado en un data frame `df` 
 
 ```{r sw_1_12}
 set.seed(1234)
@@ -201,7 +203,7 @@ Observamos que las estimaciones de la ordenada en el origen y la pendiente cambi
 Graficamos el proceso generador de datos "real" con las estimaciones de la regresión lineal
 
 ```{r sw_1_16}
-plot(x,y_02, ylab = "Y", main = "Figura 3.3 Libro ISLR")
+plot(x,y_02,xlim=c(-2,2), ylim=c(-10,10), ylab = "Y", xlab = "X", yaxs="i", xaxs="i", main = "Figura 3.3 Libro ISLR")
 lines(x,y, col="red", lwd=4)
 lines(x, fitted(fit1), col=colors()[10*1], lwd=2)
 ```
@@ -232,7 +234,7 @@ for (i in 1:10) {
 
 Luego estimamos los 10 modelos y lo representamos graficamente
 ```{r sw_1_20}
-plot(x,y_02, ylab = "Y", main = "Figura 3.3 Libro ISLR")
+plot(NULL, xlim=c(-2,2), ylim=c(-10,10), ylab = "Y", xlab = "X", yaxs="i", xaxs="i", main = "Figura 3.3 Libro ISLR")
 for (i in 1:10) {
   fitt <- lm(data = df2, formula = df2[,i]~x)
   lines(x, fitted(fitt), col=colors()[12*i])
@@ -279,12 +281,12 @@ coef(estimacion_01)
 ```{r sw_2_04}
 pacman::p_load("lmtest", "sandwich")
 
-coeftest(estimacion_01, vcov = vcovHC(estimacion_01, type = "HC0"))
+coeftest(estimacion_01, vcov = vcovHC(estimacion_01, type = "HC1"))
 
 ```
 
 
-Accedemos a mas informacion (R cuadrado, ESR)
+Accedemos a mas informacion ($R^2$, ESR), para esto accedemos a los atributos de la función `summary`
 
 ```{r sw_2_05}
 attributes(summary(estimacion_01))
@@ -322,6 +324,7 @@ u_hat <- estimacion_01$residuals
 
 ```
 
+Donde `Test_scr` es el valor observado de las calificaciones de la prueba de aptitud, y `testscr_hat` es la estimación de las calificaciones del modelo. El residuo `u_hat` es la diferencia entre ambas.
 
 Usamos el comando `cbind()` para unir las columnas (vectores) de datos que hemos creado en el paso anterior
 
@@ -377,7 +380,7 @@ data("vote1")
 
 ## Distribucion muestral de los betas 
 
-Al igual que en su curso pasado de estadística inferencial, en el cual se estimada un parámetro poblacional desconocido a partir de una muestra usando un estadístico, en este caso hacemos lo mismo cuando estimamos los parámetros de un modelo lineal.
+Al igual que en su curso pasado de estadística inferencial, en el cual se estimaba un parámetro poblacional desconocido a partir de una muestra usando un estadístico, en este caso hacemos lo mismo cuando estimamos los parámetros de un modelo lineal.
 
 Del mismo modo que podíamos construir una distribución de estadísticos muestrales, partiendo del supuesto de que tomabamos muestras repetidas de una población dada, podemos crear una distribución de los betas estimados en un modelo lineal.
 
@@ -392,7 +395,6 @@ beta_1 <- vector(length = 1000)
 Para tomar una muestra (en este caso de tamaño 100) de un data frame, hacemos lo siguiente
 
 ```{r sw_2_14}
-set.seed(1234)
 sample(nrow(caschool),100)
 caschool[sample(nrow(caschool),100), ]
 
@@ -413,7 +415,7 @@ hist(beta_1)
 ```
 
 
-**NOTA DE R**: En lugar de la función `seq_along`se puede usar una notación más convencional en otros lenguajes como for (i in 1..1000) o for (i in 1:1000) o for i in range(1000), que significa "repite esta operación en índices que van del 1 al 1000 en saltos de 1" que es una manera sofisticada de decir "repite esta operación 1000 veces" 
+**NOTA DE R**: En lugar de la función `seq_along`se puede usar una notación más convencional en otros lenguajes como `for (i in 1..1000)` o `for (i in 1:1000)` o `for i in range(1000)`, que significa "repite esta operación en índices que van del 1 al 1000 en saltos de 1" que es una manera sofisticada de decir "repite esta operación 1000 veces" 
 
 **NOTA DE R**: En lugar de usar un bucle se puede usar la función `replicate`, una de las funciones de la familia `apply`, las cuales aplican una función a un vector de valores, que es lo mismo que hace un bucle cuando _aplica_ de manera repetida la misma operación a un conjunto de valores representado por un vector. En este caso estamos haciendo algo más sencillo, repetir un número de veces una instrucción encapsulada en una función, en este caso que nos extraiga de manera repetida una muestra de una población y calcule una regresion. Así que `replicate` en nuestro ejemplo repite 1000 veces la operación descrita arriba.
 
@@ -541,7 +543,7 @@ pacman::p_load("haven", "wooldridge")
 ```
 
 
-## Motivación: Regresion lineal multiple
+## Regresion lineal multiple: motivación
 
 Volvemos al ejemplo del libro de Stock y Watson trabajado en las secciones anteriores, y añadimos una variable adicional, el nivel de ingreso promedio del distrito escolar
 
@@ -660,4 +662,323 @@ modelo_gpa01 <- lm(data = gpa1, formula = colGPA ~ hsGPA + ACT )
 summary(modelo_gpa01)
 
 ```
+
+# Laboratorio 5
+
+El objetivo de este laboratorio es aprender el uso de la función `summ`de la librería `jtools`, que aporta un resumen de la estimación del modelo visualmente más agradable y parecida a los resumenes que se suelen encontrar en publicaciones académicas e informes corporativos.
+
+Cargamos las librerías 
+
+```{r sw_5_01}
+pacman::p_load(haven, jtools, vtable, huxtable)
+```
+
+Usamos el ejemplo del libro de Stock y Watson con el cual buscan motivar la regresión lineal multiple. Cargamos los datos y vemos como con la función `vtable` podemos ver un resumen de las variables del data frame
+
+```{r sw_5_02}
+caschool <- read_dta("Data/caschool.dta")
+
+vtable(caschool)
+
+```
+
+Estimamos el modelo
+
+```{r sw_5_03}
+modelo_cas01 <- lm(data = caschool, testscr ~ str)
+summary(modelo_cas01)
+
+```
+
+En lugar de usa summary, vamos a usar la funcion `summ` de la libreria `jtools`
+
+```{r sw_5_04}
+summ(modelo_cas01)
+```
+
+Si deseamos estimaciones robustas de los errores estándar, lo indicamos con el argumento `robust`
+
+```{r sw_5_05}
+summ(modelo_cas01, robust = "HC1")
+```
+
+Siguiendo el ejemplo del libro, vamos a introducir una nueva variable, el porcentaje de estudiantes que son estudiantes de inglés (es decir, estudiantes para quienes el inglés es un segundo idioma)
+
+```{r sw_5_06}
+modelo_cas03 <- lm(data = caschool, testscr ~ str + el_pct)
+summ(modelo_cas03)
+
+```
+
+Vamos a usar errores robustos a heterocedasticidad, para que los resultados sean comparables a los del libro
+
+```{r sw_5_07}
+summ(modelo_cas03, robust = "HC1")
+```
+
+Incluimos el intervalo de confianza en la salida de la estimacion
+
+```{r sw_5_08}
+summ(modelo_cas03, robust = "HC1", confint = TRUE)
+```
+
+Si se desea incluir mas decimales lo hacemos con el argumento `digits`
+
+```{r sw_5_09}
+summ(modelo_cas03, robust = "HC1", confint = TRUE, digits = 3)
+
+```
+
+Otra manera de presentar el resumen de la estimación con la función `export_summs`
+
+```{r sw_5_10, warning=FALSE}
+export_summs(modelo_cas03)
+```
+
+Con errores robustos
+
+```{r sw_5_11}
+export_summs(modelo_cas03, robust="HC1")
+```
+
+Este formato es util si deseamos comparar modelos
+
+```{r sw_5_12}
+export_summs(modelo_cas01, modelo_cas03, robust=TRUE)
+```
+
+También podemos asignar nombres a las variables, asi se entiende mejor la estimaciòn al presentarla a un tercero
+
+```{r sw_5_13}
+export_summs(modelo_cas01, modelo_cas03,
+             robust="HC1",
+             coefs = c("Intercepto" = "(Intercept)",
+                       "Alumnos por profesor" = "str",
+                       "% de estudiantes de inglés" = "el_pct")
+             )
+
+```
+
+
+Y cambiar el nombre de los modelos
+
+```{r sw_5_14}
+export_summs(modelo_cas01, modelo_cas03,
+             robust="HC1",
+             coefs = c("Intercepto" = "(Intercept)",
+                       "Alumnos por profesor" = "str",
+                       "% de estudiantes de inglés" = "el_pct"),
+             model.names = c("Modelo 1", "Modelo 2")
+            )
+
+```
+
+# Laboratorio 6
+
+## Multicolinealidad
+
+Vamos a replicar el ejemplo de la sección de multicolinealidad del libro [An Introduction to Statistical Learning](https://www.statlearning.com/) (páginas 100-102)
+
+Cargamos las librerías
+```{r sw_6_01}
+pacman::p_load(ISLR, ISLR2, wooldridge, jtools, patchwork)
+```
+
+Vamos a trabajar con el conjunto de datos `Credit` de la librería `ISLR2`. Veamos la ayuda e inspeccionemos los datos
+
+```{r sw_6_02}
+?Credit
+```
+
+
+```{r sw_6_03}
+head(ISLR2::Credit)
+```
+
+Replicamos el gráfico 3.14 del libro
+
+
+```{r sw_6_04}
+
+plot(Credit$Limit, Credit$Age, xlab = "Limit", ylab = "Age", col="red") + plot(Credit$Limit, Credit$Rating, xlab = "Limit", ylab = "Rating", col="red")
+
+```
+
+Se observa que Limit y Rating están altamente correlacionadas mientras que Limit y Age no lo están
+
+Con la función `plot` usando como argumento el dataframe, se pueden ver todas las correlaciones a pares
+
+```{r sw_6_05}
+plot(Credit)
+```
+
+Reporducimos la tabla 3.11
+
+```{r sw_6_06}
+model_1 <- lm(data = Credit, formula = Balance ~ Age + Limit)
+model_2 <- lm(data = Credit, formula = Balance ~ Rating + Limit)
+export_summs(model_1,model_2, digits = 3)
+
+```
+
+Se observa como en la segunda regresión en la que se incluyen las variables altamente correladas, el error estándar del coeficiente de Limit aumenta considerablemente en relación a la segunda regresión, hasta el punto que deja de ser estadísticamente significativa.
+
+## Variables cualitativas
+
+Vamos a introducir una variable cualitativa en el modelo, copiamos el data frame de Credit en uno nuevo, para poder realizar modificaciones
+
+
+```{r sw_6_07}
+credito <- ISLR2::Credit
+```
+
+Creamos una variable binaria para indicar si la persona es propietaria de su vivienda o no, asignando un 1 en el caso que sea propietario y cero en caso contrario. Lo hacemos usando la función `ifelse`
+
+```{r sw_6_08}
+credito$propietario <- ifelse(credito$Own == "Yes", 1, 0)
+```
+
+Ahora estimamos el modelo con la variable cualitativa
+
+```{r sw_6_09}
+model_3 <- lm(data = credito, formula = Balance ~ propietario)
+summ(model_3)
+```
+
+```{r sw_6_10}
+
+```
+
+
+
+
+
+wooldridge::wage1
+
+head(wage1)
+
+model_04 <- lm(data = wage1, formula = wage ~ female + educ + exper + tenure)
+summ(model_04)
+
+## Ejemplo pag. 97 ISLR
+
+```{r sw_6_}
+
+```
+
+head(Credit)
+
+```{r sw_6_}
+
+```
+
+model_b <- lm(data = Credit, formula = Balance ~ Income + Student)
+summ(model_b, digits = 4)
+
+```{r sw_6_}
+
+```
+
+credito <- Credit
+
+credito$estudiante <- ifelse(credito$Student == "Yes", 1, 0)
+
+head(credito)
+
+```{r sw_6_}
+
+```
+
+model_b2 <- lm(data = credito, formula = Balance ~ Income + estudiante)
+summ(model_b2, digits = 4)
+
+## Interacciones
+
+```{r sw_6_}
+
+```
+
+model_b3 <- lm(data = credito, formula = Balance ~ Income + estudiante + Income*estudiante)
+summ(model_b3, digits = 4)
+
+```{r sw_6_}
+
+```
+
+Advertising <- read.csv("Intro/Data/Advertising.csv")
+
+```{r sw_6_}
+
+```
+
+modelo_publicidad <- lm(data = Advertising, formula = sales ~ TV + radio + newspaper)
+summ(modelo_publicidad, digits = 4)
+
+```{r sw_6_}
+
+```
+
+modelo_publicidad2 <- lm(data = Advertising, formula = sales ~ TV + radio)
+summ(modelo_publicidad2, digits = 4)
+
+```{r sw_6_}
+
+```
+
+modelo_publicidad3 <- lm(data = Advertising, formula = sales ~ TV + radio + TV*radio)
+summ(modelo_publicidad3, digits = 4)
+
+```{r sw_6_}
+
+```
+
+
+
+```{r sw_6_}
+
+```
+
+ggPredict(modelo_publicidad3, se = FALSE, interactive = TRUE)
+
+ggPredict(model_3, se = FALSE, interactive = TRUE)
+
+ggPredict(model_b, se = FALSE, interactive = TRUE)
+
+```{r sw_6_}
+
+```
+
+model_041 <- lm(data = wage1, formula = wage ~  educ + exper + female)
+ggPredict(model_041, se = FALSE, interactive = TRUE)
+
+```{r sw_6_}
+
+```
+
+pacman::p_load(performance)
+
+```{r sw_6_}
+
+```
+
+oldpar <- par( mfrow=c(2,2))
+plot(modelo_publicidad3)
+par(oldpar)
+
+```{r sw_6_}
+
+```
+
+check_model(modelo_publicidad3)
+
+```{r sw_6_}
+
+```
+
+check_autocorrelation(modelo_publicidad3)
+check_collinearity(modelo_publicidad3)
+check_heteroscedasticity(modelo_publicidad3)
+check_normality(modelo_publicidad3)
+
+
 
