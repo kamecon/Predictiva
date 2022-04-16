@@ -800,7 +800,8 @@ Replicamos el gráfico 3.14 del libro
 
 ```{r sw_6_04}
 
-plot(Credit$Limit, Credit$Age, xlab = "Limit", ylab = "Age", col="red") + plot(Credit$Limit, Credit$Rating, xlab = "Limit", ylab = "Rating", col="red")
+plot(Credit$Limit, Credit$Age, xlab = "Limit", ylab = "Age", col="red")
+plot(Credit$Limit, Credit$Rating, xlab = "Limit", ylab = "Rating", col="red")
 
 ```
 
@@ -838,147 +839,120 @@ Creamos una variable binaria para indicar si la persona es propietaria de su viv
 credito$propietario <- ifelse(credito$Own == "Yes", 1, 0)
 ```
 
-Ahora estimamos el modelo con la variable cualitativa
+Ahora estimamos el modelo con la variable cualitativa y replicamos la tabla 3.7 del libro
 
 ```{r sw_6_09}
 model_3 <- lm(data = credito, formula = Balance ~ propietario)
 summ(model_3)
 ```
 
+Como se menciona en la página 84 del libro, el intercepto representa en esta caso el balance promedio de los no-propietarios, y $\beta_1$ la diferencia entre el balance de un propietario y un no-propietario. Específicamente un no-popietario tiene un balance de 509,80 dólares y un propietario 19,73 dólares más, 509,8+19,73=529,53.
+
+Ahora vamos a replicar otro ejemplo, en este caso, el ejemplo 7.1 del libro de Wooldridge.
+
+Inspeccionamos los datos 
+
 ```{r sw_6_10}
+head(wooldridge::wage1)
 
 ```
 
+Replicamos el ejemplo
 
-
-
-
-wooldridge::wage1
-
-head(wage1)
-
+```{r sw_6_11}
 model_04 <- lm(data = wage1, formula = wage ~ female + educ + exper + tenure)
-summ(model_04)
-
-## Ejemplo pag. 97 ISLR
-
-```{r sw_6_}
+summ(model_04, digits = 3)
 
 ```
 
-head(Credit)
+Como menciona el libro en el ejemplo (página 229), el coeficiente de la variable *female* indica la diferencia en el salario promedio entre un hombre y una mujer con el mismo nivel de educación (*educ*), experiencia labora (*exper*) y antiguedad en el trabajo (*tenure*). Al ser negativo, indica que en esta muestra las mujeres tienen un salario medio inferior al de los hombres controlando por las características arriba mencionadas.
 
-```{r sw_6_}
-
-```
-
-model_b <- lm(data = Credit, formula = Balance ~ Income + Student)
-summ(model_b, digits = 4)
-
-```{r sw_6_}
-
-```
-
-credito <- Credit
-
-credito$estudiante <- ifelse(credito$Student == "Yes", 1, 0)
-
-head(credito)
-
-```{r sw_6_}
-
-```
-
-model_b2 <- lm(data = credito, formula = Balance ~ Income + estudiante)
-summ(model_b2, digits = 4)
 
 ## Interacciones
 
-```{r sw_6_}
+Vamos a replicar el ejemplo de la página 88 del libro de Statistical Learning, donde se introducen las interacciones entre variables del modelo.
+
+Vamos a trabajar con la base de datos *Advertising*. Si aún no la han descargado, la pueden encontrar [acá](https://www.statlearning.com/resources-second-edition) en la sección de Data Sets.
+
+Accedemos a los datos
+
+```{r sw_6_12}
+Advertising <- read.csv("~/Predictiva/Intro/Data/Advertising.csv")
 
 ```
+ 
+Replicamos la tabla 3.4
 
-model_b3 <- lm(data = credito, formula = Balance ~ Income + estudiante + Income*estudiante)
-summ(model_b3, digits = 4)
-
-```{r sw_6_}
-
-```
-
-Advertising <- read.csv("Intro/Data/Advertising.csv")
-
-```{r sw_6_}
-
-```
-
+```{r sw_6_13}
 modelo_publicidad <- lm(data = Advertising, formula = sales ~ TV + radio + newspaper)
 summ(modelo_publicidad, digits = 4)
 
-```{r sw_6_}
-
 ```
 
+Observamos que la variable *newspaper* no es estadísticamente significativa a nivel individual, así que procedemos a eliminarla y reestimar el modelo
+
+
+```{r sw_6_14}
 modelo_publicidad2 <- lm(data = Advertising, formula = sales ~ TV + radio)
 summ(modelo_publicidad2, digits = 4)
 
-```{r sw_6_}
-
 ```
 
+Vamos a introducir una interacción entre las variables *TV* y *radio* y replicamos la tabla 3.9 del libro
+
+```{r sw_6_15}
 modelo_publicidad3 <- lm(data = Advertising, formula = sales ~ TV + radio + TV*radio)
 summ(modelo_publicidad3, digits = 4)
 
-```{r sw_6_}
+```
+
+El parámetro asociado a la interacción indica el incremento en la efectividad de la publicidad en televisión asociado a un incremento de una unidad en el gasto de publicidad de la radio.
+
+### Interacciones con variables binarias
+
+Ahora vamos a replicar el ejemplo de la página 90 del libro de Statistical Learning, donde la interacción se realiza con una variable binaria. Volvemos a utilizar la base de datos Credit, pero ahora vamos a estimar un modelo en el que las variables independientes son el nivel de ingreso y una variable cualitativa que indica si la persona es estudiante o no. 
+
+Vamos a fijarnos en el tipo de variables de la base de datos Credit
+
+```{r sw_6_16}
+str(Credit)
+```
+
+Observamos que la variable *Student* es un **factor**. En R se emplea el tipo factor para representar variables catergóricas (sexo, estado civil, código postal, cargo, etc.). Existen variables categóricas las cuales poseen *niveles*, por ejemplo si nos referimos a tamaños, mediano es mayor a pequeño y estos dos a su vez están por debajo de grande.
+
+El tipo factor permite que podamos realizar análisis estadísticos sobre variables categóricas tengan o no niveles u ordenaciones por jerarquía.
+
+Si una variable está definida como un factor, no hace falta realizar la transformación que hemos hecho anteriormente con la función `ifelse`
+
+Estimamos el modelo correspondiente a la ecuación 3.34 de la página 90 del libro, que no es más que un modelo con una variable cualitativa como el de la sección anterior
+
+```{r sw_6_17}
+model_b <- lm(data = Credit, formula = Balance ~ Income + Student)
+summ(model_b, digits = 4)
 
 ```
 
+Vamos a replicar el grafíco de la izquierda de la figura 3.7, usando la función `ggPredict` de la librería `ggiraphExtra`.
 
+Cargamos la librería y hacemos el gráfico, usando como argumentos el modelo estimado, `se`que nos pregunta si queremos que nos grafique el intervalo de confianza, e `interactive` para que el gráfico sea interactivo
 
-```{r sw_6_}
-
-```
-
-ggPredict(modelo_publicidad3, se = FALSE, interactive = TRUE)
-
-ggPredict(model_3, se = FALSE, interactive = TRUE)
-
+```{r sw_6_18}
+pacman::p_load(ggiraphExtra)
 ggPredict(model_b, se = FALSE, interactive = TRUE)
+```
 
-```{r sw_6_}
+Observamos un modelo estándar de variables cualitativas en el cual hay un intercepto distinto en el caso de si se es estudiante o no, y pendientes iguales.
+
+A continuación, introducimos una interacción entre el ingreso y la variable binaria *Student*, representado en la ecuación 3.35 de la página 90.
+
+```{r sw_6_19}
+model_b2 <- lm(data = Credit, formula = Balance ~ Income + Student + Income*Student)
+summ(model_b2, digits = 4)
 
 ```
 
-model_041 <- lm(data = wage1, formula = wage ~  educ + exper + female)
-ggPredict(model_041, se = FALSE, interactive = TRUE)
-
-```{r sw_6_}
-
+```{r sw_6_20}
+ggPredict(model_b2, se = FALSE, interactive = TRUE)
 ```
 
-pacman::p_load(performance)
-
-```{r sw_6_}
-
-```
-
-oldpar <- par( mfrow=c(2,2))
-plot(modelo_publicidad3)
-par(oldpar)
-
-```{r sw_6_}
-
-```
-
-check_model(modelo_publicidad3)
-
-```{r sw_6_}
-
-```
-
-check_autocorrelation(modelo_publicidad3)
-check_collinearity(modelo_publicidad3)
-check_heteroscedasticity(modelo_publicidad3)
-check_normality(modelo_publicidad3)
-
-
-
+Observamos ahora como la interacción hace que las pendientes de la estimación para estudiantes y no-estudiantes ya no se sean paralelas, como el gráfico de la derecha de la figura 3.7
