@@ -1,7 +1,7 @@
 ---
 title: "Resumen laboratorios de Regresión Lineal"
 author: "Kamal Romero"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+date: "`r format(Sys.time(), '%B, %Y')`"
 output: 
   rmdformats::readthedown:
     highlight: kate
@@ -16,10 +16,27 @@ output:
     number_sections: true
 ---
 
+<style>
+p.comment {
+background-color: #DBDBDB;
+padding: 10px;
+border: 1px solid black;
+margin-left: 25px;
+border-radius: 5px;
+font-style: italic;
+}
+
+</style>
+
 ```{r setup, include=FALSE}
 ## Global options
 knitr::opts_chunk$set(cache = TRUE)
 ```
+
+<p class="comment">
+El siguiente documento es un resumen de los laboratorios que se encuentran en la sección de códigos de Blackboard y se han realizado en clase.
+En este documento se presenta de manera más ordenada la información de los laboratorios, pero tomar en cuenta que el objetivo de los mismos era hacerlo en clase en un contexto determinado, por lo que hay partes del documento que no son del todo autocontenidas y que quizás requieran para seguirlas los libros de texto, las diapositivas u otras referencias (apuntes, grabaciones, etc.)
+</p>
 
 # Laboratorio 1
 
@@ -589,6 +606,8 @@ pt(2.391, df = 522, lower.tail = FALSE)*2
 
 Ejemplo sacado de este [libro](http://www.urfie.net/downloads03.html) (sería interesante revisar este libro para replicar en R los ejemplos del libro de Wooldridge)
 
+Las diapositivas hacen refererencia a la presentación de clase *"Regresión lineal múltiple: estimación"*
+
 ```{r sw_4_06}
 data(gpa1)
 ```
@@ -607,7 +626,7 @@ Extraemos la variable independiente $y$
 y <- gpa1$colGPA
 ```
 
-Construimos la matriz de regresores $X$ (en este caso 2) y añadimos una columna de unos (ver diapositiva 9)
+Construimos la matriz de regresores $X$ (en este caso 2) y añadimos una columna de unos (ver diapositiva 10)
 
 ```{r sw_4_09}
 X <- cbind(1, gpa1$hsGPA, gpa1$ACT)
@@ -619,7 +638,8 @@ Inspeccionamos las primeras filas de  $X$:
 head(X)
 ```
 
-Estimamos los betas usando la expresión de la diapositiva 18:
+Estimamos los betas usando la expresión de la diapositiva 19:
+$$\hat{\beta}=(X'X)^{-1}X'y$$
 
 ```{r sw_4_11}
 beta_hat <- solve( t(X)%*%X ) %*% t(X)%*%y 
@@ -627,13 +647,19 @@ beta_hat
 
 ```
 
+El comando `solve` invierte la matriz, y la función `t()` ejecuta la transpuesta de una matriz y el operador `%*%` realiza productos de matrices, por lo que `solve( t(X)%*%X )` ejecuta la operación $(X'X)^{-1}$
+
 Calculamos los residuos
 
 ```{r sw_4_12}
 uhat <- y - X %*% beta_hat
 ```
 
-Calculamos la varianza estimada de $u$ y el ESR:
+Calculamos la varianza estimada de $u$ y el ESR, de la diapositiva 30:
+
+$$\sigma^2=\frac{\sum\hat{u^2_i}}{n-k-1}=\frac{u'u}{n-k-1}$$
+
+Nota: en la presentación de clase se usa $\epsilon$ en lugar de $u$
 
 ```{r sw_4_13}
 sigsqhat <- as.numeric( t(uhat) %*% uhat / (n-k-1) )
@@ -644,7 +670,9 @@ ESR
 ```
 
 
-Varianza estimada de los betas y su error estándar:
+Varianza estimada de los betas (matriz de varianzas y covarianzas $MVC(\hat{\beta})$) y su error estándar. En la diapositiva 30 podrá encontrar la expresión:
+
+$$MVC(\hat{\beta})=\hat{\sigma^2}(X'X)^{-1}$$
 
 ```{r sw_4_14}
 Vbetahat <- sigsqhat * solve( t(X)%*%X )
@@ -956,3 +984,132 @@ ggPredict(model_b2, se = FALSE, interactive = TRUE)
 ```
 
 Observamos ahora como la interacción hace que las pendientes de la estimación para estudiantes y no-estudiantes ya no se sean paralelas, como el gráfico de la derecha de la figura 3.7
+
+## Evaluación o diagnósis del modelo
+
+En esta sección se muestra como basados en unos gráficos, se puede comprobar si el modelo estimado cumple con ciertas propiedades de partida del modelo lineal, como lo son la linealidad, la homocedasticidad, la autocorrelación de los residuos, la normalidad de los errores y la multicolinealidad.
+
+Empezamos con el instrumental gráfico de R base, tomando como ejemplo el modelo estimado del gasto de publicidad con interacciones
+
+```{r sw_6_21}
+oldpar <- par( mfrow=c(2,2))
+plot(modelo_publicidad3)
+par(oldpar)
+
+```
+
+En el sentido de las agujas del reloj, el primer gráfico es un gráfico de residuos, en el cual se representan los residuos $u_i=y_i-\hat{y}_i$ vs. los valores estimados por el modelo $\hat{y}_i$. Si se cumple el supuesto de que existe una relación lineal entre la variable respuesta o dependiente y los regresores, el gráfico de dispersión no debería tener ningún patrón sistemático y la línea roja debería ser horizontal.
+
+En el segundo gráfico es el QQ (cuantil-cuantil) Plot. Dicho gráfico lo que hace es comparar unos datos determinados, en este caso los residuos estandarizados, con donde deberían estar localizados dichos datos en una distribución normal. Si todos o la mayoría de los puntos están sobre la línea recta, entonces podemos afirmar que los residuos siguen una distribución normal.
+
+En el tercer gráfico donde se representan la raíz cuadrada de los residuos estandarizados y los valores estimados por el modelo, el mismo se utiliza para detectar *heterocedasticidad*. Debemos observar si los residuos están igual de dispersos a medida que nos movemos de izquierda a derecha. De ser así la línea roja debería ser horizontal.
+
+El último gráfico se usa para detectar problemas de valores atípicos (outliers) o valores influyentes (leverage). En el eje vertical tenemos los residuos estandarizados, sus valores nos indican que tan alejados están de la media. Si los residuos están muy alejados de la media (mayor a 3), tendremos valores atípicos.
+
+Todos los gráficos indican los puntos más extremos (79, 56 y 131 en este caso).
+
+Según estos gráficos podríamos decir el modelo presenta evidencia de no-linealidad, no-normalidad y presencia de atípicos.
+
+Existe una librería que nos proporciona un gráfico más amigable, la librería `performance`
+
+La instalamos y con la función `check_model` obtenemos un gráfico similar
+
+```{r sw_6_2, fig.height=9}
+pacman::p_load(performance)
+check_model(modelo_publicidad3)
+```
+
+No usaremos el primero del conjunto de gráficos, por lo que lo obviamos. Observamos que son los mismos gráficos pero más claros y además en el subtítulo nos indica en que debemos fijarnos. Por ejemplo, vemos que con el gráfico anterior teníamos sospechas de valores atípicos, y en este se ve más claro que no es el caso.
+
+Hay sub-gráfico que no analizamos anteriormente, y es el de colinariedad, que sirve para detectar problemas de multicolinealidad. En el mismo observamos unas barras que corresponden al *factor de inflación de la varianza*. Valores altos de estos son evidencia de multicolinealidad, explicamos en que consiste dicho factor.
+
+Si revisamos la diapositiva 42 de la presentación de clase *"Regresión lineal múltiple: estimación"*, vemos que una manera de detectar multicolinealidad es realizar una regresión del regresor $i$ en función del resto de regresores, si el $R^2$ de dicha regresión es alto estamos en presencia de multicolinealidad. Si realizamos dichas regresiones para cada variable independiente y obtenemos el $R^2$ correspondiente, el factor de inflación de la varianza del regresor $j$ $\big(VIF(\hat{\beta}_j)\big)$ viene dado por:
+$$VIF(\hat{\beta}_j)=\frac{1}{1-R^2_{x_j|x_{-j}}}$$
+
+Si el $R^2$ de la regresión es alto, el $VIF(\hat{\beta}_j)$ es alto, por lo que existe evidencia de multicolinealidad.
+
+Se denomina factor de inflación de la varianza, por la definición de la varianza de los betas en el caso de una regresión múltiple. Recordar que la desviación típica de $\beta_1$ en el caso de la regresión simple y en ausencia de heterocedasticidad viene dado por (diapositiva 28 de la presentación de clase Regresión lineal simple: Heterocedasticidad y Homocedasticidad):
+$$VAR(\beta_1)=\frac{\sigma_u^2}{\sum^n_{i=1}(x_i-\bar{x})^2}$$
+
+No se ha hecho en clase, pero es posible demostrar (ver ecuación 3.51, página 95 del libro de Wooldridge) que en el caso de la regresión lineal múltiple, la varianza del beta correspondiente al regresor $j$ es igual a: 
+
+$$VAR(\beta_j)=\frac{\sigma_u^2}{\sum^n_{i=1}\bigg(x_i-\bar{x}\bigg)^2\bigg(1-R^2_{x_j|x_{-j}}\bigg)}=\frac{\sigma_u^2}{\sum^n_{i=1}(x_i-\bar{x})^2}\frac{1}{\bigg(1-R^2_{x_j|x_{-j}}\bigg)}$$
+
+El VFI lo que hace es "inflar" la varianza de $\beta_j$.
+
+Hay quienes indican que un VFI superior a 10 señala un problema de multicolinealidad, pero este es un límite arbitrario y varía según el analista, libro de texto, informe, etc.
+
+
+# Laboratorio 7
+
+El objetivo de este laboratorio es obtener las predicciones de un modelo lineal y el intervalo de confianza de la predicción. Usaremos el ejemplo del libro de Stock y Watson
+
+```{r sw_7_01}
+pacman::p_load(haven,jtools)
+```
+
+Cargamos los datos
+
+```{r sw_7_02}
+caschool <- read_dta("Data/caschool.dta")
+head(caschool)
+
+```
+
+Estimamos el modelo con todos los datos (comparar con tabla 7.1 del libro)
+
+```{r sw_7_03}
+modelo_full <- lm(data = caschool, formula = testscr ~ str + el_pct + meal_pct + calw_pct)
+summ(modelo_full, robust = "HC1", digits = 3)
+
+```
+
+Dividimos la muestra, dejamos algunas observaciones fuera, para luego predecir con las caracteristicas de estas observaciones. Determinamos de manera aleatoria que elementos sacamos de la muestra, 20 en nuestro caso.
+
+```{r sw_7_04}
+set.seed(1234)
+filas <- sample(x = rownames(caschool),20)
+filas
+```
+
+Dividimos la muestra en dos
+```{r sw_7_05}
+caschool_train <- caschool[-as.numeric(filas),]
+caschool_test <- caschool[as.numeric(filas),]
+
+```
+
+Estimamos con los datos restantes (entrenamiento)
+
+```{r sw_7_06}
+modelo_train <- lm(data = caschool_train, formula = testscr ~ str + el_pct + meal_pct + calw_pct)
+summ(modelo_train, robust = "HC1", digits = 3)
+
+```
+
+Predecimos los valores de las observaciones que hemos dejado fuera (prueba), construyendo un intervalo del 95% de confianza
+
+```{r sw_7_07}
+prediccion <-  predict(object = modelo_train, newdata = caschool_test, interval = "prediction", level = 0.95)
+prediccion
+
+```
+
+Construimos una tabla con el valor real de la variable dependiente
+
+```{r sw_7_08}
+prediccion2 <-  cbind(prediccion, caschool_test$testscr)
+prediccion2
+
+```
+
+colocamos un nombre a la ultima columna
+
+```{r sw_7_09}
+colnames(prediccion2)
+
+colnames(prediccion2)[4] <- "real"
+
+prediccion2
+
+```
