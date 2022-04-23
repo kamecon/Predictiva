@@ -1,0 +1,193 @@
+---
+title: "Ejercicios resueltos"
+author: "Kamal Romero"
+date: "`r format(Sys.time(), '%B, %Y')`"
+output: 
+  rmdformats::readthedown:
+    highlight: kate
+  html_document: 
+    toc: true
+    number_sections: true
+    theme: "yeti"
+  md_document:
+    variant: markdown_github
+  pdf_document: 
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+# Ejercicio 15
+
+Cargamos las librerias 
+```{r p15_01, warning=FALSE}
+pacman::p_load("ISLR2", "sandwich", "jtools", "huxtable")
+```
+
+Cargamos e inspeccionamos los datos
+
+```{r p15_02}
+data(Auto)
+str(Auto)
+head(Auto)
+
+```
+
+## a)
+
+```{r p15_03}
+plot(Auto)
+```
+ 
+## b)
+
+Excluimos la última columa (9)
+
+```{r p15_04}
+cor(Auto[,-9])
+```
+
+## c)
+
+
+```{r p15_05}
+modelo_15_01 <- lm(formula = mpg ~ . -name, data = Auto)
+summary(modelo_15_01)
+```
+
+### i)
+
+Si, ya que ninguno de los coeficientes estimados es igual a cero
+
+### ii)
+
+Existe una relación estadísticamente significativa entre todos los regrtesores excepto *cylinders*, *horsepower* y *acceleration*
+
+### iii)
+
+Que a medida que el coche es más antiguo, su consumo medido en millas por galón (distancia recorrida por unidad de combustible, kilómetros por litro en nuestro caso) es mayor.
+
+# Ejercicio 16
+
+
+Cargamos e inspeccionamos los datos
+
+```{r p16_02}
+data("Carseats")
+str(Carseats)
+head(Carseats)
+
+```
+
+
+## a)
+
+```{r p16_03}
+modelo_16_01 <- lm(formula = Sales ~ Price + Urban + US, data = Carseats)
+summ(modelo_16_01)
+
+```
+
+## b)
+
+Un incremento unitario del precio disminuye las ventas en 0.05 miles de dolares
+Si la tienda esta en una zona urbana, las ventas son menores
+Si la tienda está en USA las ventas son mayores
+
+## c)
+
+$\hat{Sales} =$ `r round(summary(modelo_16_01)$coefficients[1,1],2)`  `r round(summary(modelo_16_01)$coefficients[2,1],2)`$Price$  `r round(summary(modelo_16_01)$coefficients[3,1],2)`$Urban$ + `r round(summary(modelo_16_01)$coefficients[4,1],2)`$US$
+
+## c) 
+Observando el p-valor de los coeficientes, podemos rechazar la hipótesis nula $\beta_j=0$ para *Price* y *US*
+
+## e)
+Eliminamos la variable *Urban* al no ser estadísticamente significativa de cero y reestimamos el modelo
+
+```{r p16_04}
+modelo_16_02 <- lm(formula = Sales ~ Price + US, data = Carseats)
+summ(modelo_16_02)
+
+```
+
+## f)
+
+```{r p16_05, warning=FALSE, message=FALSE}
+export_summs(modelo_16_01, modelo_16_02, digits=3)
+```
+
+Según el $R^2$ de ambos modelos, el ajuste es casi el mismo
+
+## g)
+```{r p16_06}
+modelo_16_02 <- lm(formula = Sales ~ Price + US, data = Carseats)
+summ(modelo_16_02, confint = TRUE)
+
+```
+
+# Ejercicio 17
+
+## a)
+
+```{r p17_01}
+set.seed ( 1 )
+x1 <- runif (100)
+x2 <- 0.5*x1 + rnorm (100) / 10
+y <-- 2 + 2*x1 + 0.3*x2 + rnorm (100)
+```
+
+Los coeficientes de la regresión son $\beta_0=2$, $\beta_1=2$ y $\beta_2=0.3$
+
+## b)
+
+```{r p17_02}
+plot(x2, x1, col="red")
+```
+
+Calculamos la correlación
+
+```{r p17_03}
+cor(x1, x2)
+```
+
+Observamos que es relativamente alta, lo cual viene dado por como hemos construido $x_2$
+
+## c)
+
+```{r p17_04}
+modelo_17_01 <- lm(y ~x1 + x2)
+summ(modelo_17_01, digits = 3)
+```
+
+Los parámetros estimados no son los mismos que los verdaderos valores. No podemos rechazar la hipótesis nula $H_0: \beta_2=0$
+
+## d)
+
+```{r p17_05}
+modelo_17_02 <- lm(y ~x1 )
+summ(modelo_17_02, digits = 3)
+```
+
+Ahora el parámetro $\beta_1$ si coinicide con el dato verdadero. Si podemos rechazar la hipótesis nula $H_0: \beta_1=0$
+
+
+## e)
+
+```{r p17_06}
+modelo_17_03 <- lm(y ~x2 )
+summ(modelo_17_03, digits = 3)
+```
+
+Si podemos rechazar la hipótesis nula $H_0: \beta_1=0$, pero el parámetro $\beta_1$ no coinicide con el dato verdadero. 
+
+## f)
+
+Recapitular la discusión de la multicolinealidad que se realizó en clase cuando se trabajó el laboratorio 6
+
+
+
+
