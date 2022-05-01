@@ -1,0 +1,160 @@
+---
+title: "Resolución prueba parcial"
+author: "Kamal Romero"
+date: "`r format(Sys.time(), '%B, %Y')`"
+output: 
+  rmdformats::readthedown:
+    highlight: kate
+  pdf_document: 
+    toc: true
+    number_sections: true
+  md_document:
+    variant: markdown_github
+  html_document: 
+    toc: true
+    number_sections: true
+    theme: "yeti"
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+```{r libs, echo=FALSE}
+pacman::p_load("openintro", "sandwich", "jtools", "huxtable")
+```
+
+
+En el siguiente ejercicio vamos a usar la base de datos loans_full_schema de la librería openintro.
+
+Estos datos provienen de Lending Club (lendingclub.com), que proporciona un gran conjunto de datos sobre las personas que recibieron préstamos a través de su plataforma.  Los datos usados en este ejercicio provienen de una muestra de los préstamos realizados en el primer trimestre (enero, febrero y marzo) de 2018.
+
+A continuación, enumeramos algunas de las variables y su descripción:
+
+`interest_rate`: Tipo de interés aplicado a los préstamos
+
+`verified_income`:  Variable categórica que describe si la fuente de ingresos del prestatario y su nivel han sido verificados. Los valores son: verificados, solo fuente, y no.
+
+`debt_to_income`: Relación deuda-ingreso, que es el porcentaje de la deuda total del prestatario dividido por sus ingresos totales.
+
+`total_credit_utilized`: De todo el crédito disponible para el prestatario, ¿qué fracción están utilizando? Por ejemplo, la utilización de crédito en una tarjeta de crédito sería el saldo de la tarjeta dividido por el límite de crédito de la tarjeta.
+
+`public_record_bankrupt`:  Una variable categórica que indica si el prestatario tiene una bancarrota pasada en su registro. Esta variable toma un valor de 1 si la respuesta es "sí" y 0 si la respuesta es "no".
+
+`term`: La duración del préstamo, en meses.
+
+`issue_month`: El mes y el año en que se emitió el préstamo, que para estos préstamos es siempre durante el primer trimestre de 2018.
+
+`inquiries_last_12m`: Número de verificaciones de crédito en los últimos 12 meses. Por ejemplo, al archivar una solicitud de una tarjeta de crédito, es común que la empresa que recibe la solicitud ejecute una verificación de crédito.
+
+`homeownership`: Indica si la persona es propietaria o no de su vivienda. La variable posee 3 niveles: propietario sin hipoteca, propietario con hipoteca y vivienda alquilada
+
+Vamos a analizar los determinantes del tipo de interés de los préstamos
+
+# 1. Estime un modelo lineal para el tipo de interés con un solo predictor, la variable que indica si una persona tiene o no una bancarrota en su registro
+
+```{r 1}
+modelo01 <- lm(formula = interest_rate ~ public_record_bankrupt, data = loans_full_schema)
+summ(modelo01)
+```
+## a. Interpretar el coeficiente para la variable de quiebra pasada en el modelo. ¿Es este coeficiente estadísticamente distinto de 0?
+
+Un prestatario que haya tenido una bancarrota en su registro tendrá un tipo de interés 0.7 puntos mayor que uno que no haya tenido un historial de bancarrota
+  
+## b. Interprete el término constante o intersecto del modelo
+  
+Es el tipo de interés que se cobrará a un prestatario sin bancarrotas en su historial. 
+
+Dado el modelo estimado $interest Rate = 12,34 + 0,7*public Record Bankrupt$, si el cliente no ha tenido bancarrotas `public_record_bankrupt`=0, por ende, $ interest Rate = 12,34$, y en caso contrario $interest Rate = 12,34 + 0,7 = 13,04$
+
+# 2. Estime otro modelo lineal en el cual se incluyan las siguientes variables predictoras o independientes: `verified_income`, `debt_to_income`, `total_credit_utilized`, `public_record_bankrupt`, `term`, `issue_month` y `inquiries_last_12m`
+
+```{r 2}
+modelo02 <- lm(formula = interest_rate ~ public_record_bankrupt + verified_income + debt_to_income + total_credit_utilized + public_record_bankrupt + term + issue_month + inquiries_last_12m, data = loans_full_schema)
+summ(modelo02)
+```
+
+## a. El coeficiente asociado a la variable de bancarrota en el segundo modelo, ¿es distinto al primero? ¿por qué?
+  
+El coeficiente disminuye de 0,7 a 0,48. Al no incluir el resto de las variables se sobre estima el efecto de la variable bancarrota sobre el tipo de interés, ya que este recoge en parte el efecto del resto de las variables a través de las correlaciones de esta variable con el resto.
+
+## b. ¿El efecto de la variable de deuda-ingreso sobre el tipo interés es estadísticamente distinto de cero? Justifique su respuesta usando el error estándar del parámetro estimado (verbalmente, sin usar formulas).
+
+Si es estadísticamente distinto de cero. El valor del parámetro estimado es 0,04, su error estándar es muy bajo, por lo que el valor del estadístico t será muy alto, y por ende, la estimación estará muy alejada del cero medido en términos de desviaciones estándar.
+
+## c. ¿Qué variables eliminaría por no ser estadísticamente distintas de cero? Justifique su respuesta usando el estadístico t.
+  
+La variable categórica `issue_month`. Observando el estadístico t que acompaña ambas variables, los mismos indican que están muy cerca del valor del parámetro bajo la hipótesis nula, tan cerca que estadísticamente no existe suficiente evidencia para afirmar que el valor de los parámetros no provienen de la distribución bajo la hipótesis nula.
+
+## d. Estime de nuevo el modelo después de eliminar las variables del apartado anterior. ¿Esta versión del modelo se ajusta mejor a los datos? Justifique su respuesta.
+  
+```{r 2d}
+modelo03 <- lm(formula = interest_rate ~ public_record_bankrupt + verified_income + debt_to_income + total_credit_utilized + public_record_bankrupt + term + inquiries_last_12m, data = loans_full_schema)
+summ(modelo03)
+```
+
+La bondad de ajuste del modelo se analiza viendo el valor del $R^2$ o el ESR. El $R^2$ ajustado en ambas regreasiones es el mismo a tres puntos decimales (0,193), por lo que ambos modelos se ajustan de manera similar.
+
+## e. En función de su respuesta en los dos apartados anteriores ¿Con que modelo se quedaría para usarlo como herramienta de negocio?
+  
+Ambos modelos tienen un ajuste similar, pero en el segundo todas las variables son estadísticamente distintas de cero, algunos preferiran el segundo modelo porque se pueden interpretar todos sus parámetros como los efectos de un cambio unitario en los regresores sobre la variable dependiente.
+
+## f. En el código va a encontrar las instrucciones para poder ver los gráficos de diagnóstico. Usando el gráfico correspondiente (debe señalar cual ha usado), indique si el modelo estimado cumple con la propiedad de homocedasticidad. En caso de que no la cumpla, estime un modelo robusto a heterocedasticidad (en la función summ(), añada el argumento robust = "HC1").
+  
+```{r 2f}
+oldpar <- par( mfrow=c(2,2))
+plot(modelo03)
+par(oldpar)
+```
+
+
+En el tercer gráfico (siguiendo el sentido de las agujas del reloj) la línea roja no es horizontal, debido a los valores más a la derecha del eje horizontal. Esto podría ser evidencia de heterocedasticidad.
+
+Se estima el modelo con varianzas robustas a heterocedasticidad.
+
+```{r 2f2}
+summ(modelo03, robust = "HC1")
+```
+
+## g. En el caso de la estimación robusta ¿Han cambiado el valor de los estadísticos t? ¿Por qué?
+  
+Cambia el valor de los estadísticos t porque los errores estándar son distintos, estos últimos se calculan para que sean robustos a heterocedasticidad.
+
+## h. Construya un intervalo de confianza del 95% para el coeficiente de la variable de bancarrota. Usando dicho intervalo:
+    
+### i. Justifique que el historial de bancarrotas tiene un efecto distinto de cero sobre el tipo de interés de préstamos
+    
+```{r 2hi}
+summ(modelo03, robust = "HC1", confint = TRUE)
+```
+
+El intervalo de confianza del coeficiente de la variable del historial de bancarrotas $(0,23; \; 0,72)$ no contiene el cero, por lo que la estimación del valor del coeficiente es estadísticamente distinto de cero.
+
+### ii. Un compañero de trabajo que desea quedarse con su puesto le dice a su supervisor lo siguiente “Tengo un cliente que en su caso el efecto del historial de bancarrotas sobre el tipo de interés fue la mitad que la estimada por el modelo, lo cual prueba que dicho modelo es un rotundo fracaso” Defienda su posición.
+    
+El coeficiente que resume el efecto lineal de la historia de bancarrotas sobre el tipo de interés de préstamos es igual a 0,48, la mitad de dicho valor es 0,24. Este valor está dentro del intervalo al 95% de confianza $(0,23; \; 0,72)$. Un valor de 0,24 está dentro del rango de la estimación.
+
+# 3 Incluya la variable homeownership en su último modelo estimado.
+
+```{r 3}
+modelo04 <- lm(formula = interest_rate ~ public_record_bankrupt + verified_income + debt_to_income + total_credit_utilized + public_record_bankrupt + term + inquiries_last_12m + homeownership, data = loans_full_schema)
+summ(modelo04)
+```
+
+
+## a.	Interprete el coeficiente de la variable homeownership
+
+Dado el valor del resto de las variables independientes incluídas en el modelo, un cliente que tenga vivienda en alquiler pagará un tipo de interés 1,64 mayor; y un cliente que tenga vivienda en propiedad sin hipoteca un tipo de interés 0,8 mayor. Ambos en relación a un cliente con vivienda en propiedad con hipoteca.
+
+## b.	Asuma que la variable homeownership tuviera solo dos niveles: vivienda en propiedad y vivienda en alquiler. Si usted estimara un modelo donde las únicas variables independientes son el historial de bancarrota y la variable categórica de propietario ¿Cómo interpretaría una interacción entre ambas variables?
+
+El modelo adoptaría la siguiente forma: Tipo de interés = $\beta_0 + \beta_1 \times$ Historial Bancarrota + $\beta_2 \times$ Propietario + $\beta_3 \times$ Historial Bancarrota $\times$ Propietario
+
+Se puede reescribir como: Tipo de interés = $\beta_0 + (\beta_1 + \beta_3 \times$ Propietario $) \times$ Historial Bancarrota + $\beta_2 \times$ Propietario  
+
+Si se es propietario: $\beta_0 + (\beta_1 + \beta_3) \times$ Historial Bancarrota + $\beta_2 =$ $\beta_0 + \beta_2 + (\beta_1 + \beta_3) \times$ Historial Bancarrota.
+
+En caso contrario: $\beta_0 + \beta_1  \times$ Historial Bancarrota
+
+La interacción se interpretaría como el efecto que tiene el historial de bancarrota sobre el tipo de interés dependiendo de si se es propietario o no.
