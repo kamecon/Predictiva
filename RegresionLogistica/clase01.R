@@ -100,7 +100,8 @@ plot(x = HMDA$pirat,
 abline(h = 1, lty = 2, col = "darkred")
 abline(h = 0, lty = 2, col = "darkred")
 text(2.5, 0.9, cex = 0.8, "Hipoteca denegada")
-text(2.5, -0.1, cex= 0.8, "Hipoteca concedida")
+text(2.5, -0.1, cex= 0.8, "Hipoteca concedida") 
+text(1.75, 0.5, cex= 0.8, "Modelo de probabilidad lineal")
 
 # add the estimated regression line
 abline(modelo_cap11_01, 
@@ -113,6 +114,9 @@ prop.table(table(HMDA$afam))
 modelo_cap11_02 <- lm(data = HMDA, deny2 ~ pirat + afam)
 summ(modelo_cap11_02, digits = 3, robust = "HC1")
 
+pnorm(q = -0.8)
+
+
 modelo_cap11_03 <- glm(data = HMDA, deny2 ~ pirat, family = binomial(link = probit))
 summ(modelo_cap11_03, digits = 3, robust = "HC1")
 
@@ -121,13 +125,14 @@ prediccion <-  predict(modelo_cap11_03, nuevo, type = "response")
 prediccion
 round(prediccion, 3)
 (prediccion[2]-prediccion[1])*100
+diff(prediccion)
 
 # plot data
 plot(x = HMDA$pirat, 
      y = HMDA$deny2,
-     main = "Probit Model of the Probability of Denial, Given P/I Ratio",
-     xlab = "P/I ratio",
-     ylab = "Deny",
+     main = "Modelo Probit de la probabilidad de denegación. Dada la ratio P/I",
+     xlab = "Ratio P/I",
+     ylab = "Denegar",
      pch = 20,
      ylim = c(-0.4, 1.4),
      cex.main = 0.85)
@@ -135,14 +140,15 @@ plot(x = HMDA$pirat,
 # add horizontal dashed lines and text
 abline(h = 1, lty = 2, col = "darkred")
 abline(h = 0, lty = 2, col = "darkred")
-text(2.5, 0.9, cex = 0.8, "Mortgage denied")
-text(2.5, -0.1, cex= 0.8, "Mortgage approved")
+text(2.5, 0.9, cex = 0.8, "Hipoteca denegada")
+text(2.5, -0.1, cex= 0.8, "Hipoteca concedida") 
+text(1.25, 0.5, cex= 0.8, "Modelo Probit")
 
 # add estimated regression line
 x <- seq(0, 3, 0.01)
 y <- predict(modelo_cap11_03, list(pirat = x), type = "response")
 
-lines(x, y, lwd = 1.5, col = "steelblue")
+lines(x, y, lwd = 2, col = "steelblue")
 
 modelo_cap11_04 <- glm(data = HMDA, deny2 ~ pirat + afam, family = binomial(link = probit))
 summ(modelo_cap11_04, digits = 3, robust = "HC1")
@@ -152,3 +158,42 @@ prediccion2 <-  predict(modelo_cap11_04, nuevo2, type = "response")
 prediccion2
 round(prediccion2, 3)
 (prediccion2[2]-prediccion2[1])*100
+
+modelo_cap11_05 <- glm(data = HMDA, deny2 ~ pirat, family = binomial(link = logit))
+summ(modelo_cap11_05, digits = 3, robust = "HC1")
+
+modelo_cap11_06 <- glm(data = HMDA, deny2 ~ pirat + afam, family = binomial(link = logit))
+summ(modelo_cap11_06, digits = 3, robust = "HC1")
+
+
+
+# plot data
+plot(x = HMDA$pirat, 
+     y = HMDA$deny,
+     main = "Modelos Probit y Logit  para la probabilidad de denegación, dada la variable ratio P/I",
+     xlab = "Ratio P/I ",
+     ylab = "Denegar",
+     pch = 20,
+     ylim = c(-0.4, 1.4),
+     cex.main = 0.9)
+
+# add horizontal dashed lines and text
+abline(h = 1, lty = 2, col = "darkred")
+abline(h = 0, lty = 2, col = "darkred")
+text(2.5, 0.9, cex = 0.8, "Hipoteca denegada")
+text(2.5, -0.1, cex= 0.8, "Hipoteca concedida") 
+
+# add estimated regression line of Probit and Logit models
+x <- seq(0, 3, 0.01)
+y_probit <- predict(modelo_cap11_03, list(pirat = x), type = "response")
+y_logit <- predict(modelo_cap11_05, list(pirat = x), type = "response")
+
+lines(x, y_probit, lwd = 1.5, col = "steelblue")
+lines(x, y_logit, lwd = 1.5, col = "black", lty = 2)
+
+# add a legend
+legend("topleft",
+       horiz = TRUE,
+       legend = c("Probit", "Logit"),
+       col = c("steelblue", "black"), 
+       lty = c(1, 2))
