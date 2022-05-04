@@ -86,7 +86,7 @@ summ(modelo_cap11_01, digits = 3, robust = "HC1")
 plot(HMDA$pirat, HMDA$deny2)
 abline(modelo_cap11_01)
 
-# plot the data
+# Grafico del libro, sacado de https://www.econometrics-with-r.org/ capitulo 11
 plot(x = HMDA$pirat, 
      y = HMDA$deny2,
      main = "Diagrama de dispersión de las denegaciones en solicitudes de hipoteca y ratio pagos-ingresos",
@@ -127,7 +127,7 @@ round(prediccion, 3)
 (prediccion[2]-prediccion[1])*100
 diff(prediccion)
 
-# plot data
+# Grafico del libro, sacado de https://www.econometrics-with-r.org/ capitulo 11
 plot(x = HMDA$pirat, 
      y = HMDA$deny2,
      main = "Modelo Probit de la probabilidad de denegación. Dada la ratio P/I",
@@ -167,7 +167,7 @@ summ(modelo_cap11_06, digits = 3, robust = "HC1")
 
 
 
-# plot data
+# Grafico del libro, sacado de https://www.econometrics-with-r.org/ capitulo 11
 plot(x = HMDA$pirat, 
      y = HMDA$deny,
      main = "Modelos Probit y Logit  para la probabilidad de denegación, dada la variable ratio P/I",
