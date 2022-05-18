@@ -197,3 +197,45 @@ legend("topleft",
        legend = c("Probit", "Logit"),
        col = c("steelblue", "black"), 
        lty = c(1, 2))
+
+# Evaluación del modelo
+
+#Dividimos la muestra, dejamos algunas observaciones fuera, para luego predecir con las caracteristicas de estas observaciones
+set.seed(1234)
+
+#Determinamos de manera aleatoria que elementos sacamos de la muestra
+filas <- sample(x = rownames(HMDA),200)
+filas
+
+#Dividimos la muestra en dos
+HMDA_train <- HMDA[-as.numeric(filas),]
+HMDA_test <- HMDA[as.numeric(filas),]
+
+#Estimamos con los datos restantes
+modelo_cap11_train <- glm(data = HMDA_train, deny2 ~ pirat + afam, family = binomial(link = logit))
+summ(modelo_cap11_train, digits = 3, robust = "HC1")
+
+
+#Predecimos los valores de las observaciones que hemos dejado fuera
+prediccion <-  predict(object = modelo_cap11_train, newdata = HMDA_test, type = "response")
+prediccion
+
+prediccion_deny <- ifelse(prediccion > 0.5, 1, 0)
+prediccion_deny
+
+table(HMDA_test$deny2)
+table(prediccion_deny, HMDA_test$deny2)
+mean(prediccion_deny == HMDA_test$deny2)
+mean(prediccion_deny != HMDA_test$deny2)
+
+
+#Construimos una tabla con el valor real de la variable dependiente
+prediccion2 <-  cbind(prediccion, caschool_test$testscr)
+prediccion2
+
+#colocamos un nombre a la ultima columna
+colnames(prediccion2)
+
+colnames(prediccion2)[4] <- "real"
+
+prediccion2
