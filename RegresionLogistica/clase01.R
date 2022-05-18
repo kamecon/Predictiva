@@ -204,7 +204,7 @@ legend("topleft",
 set.seed(1234)
 
 #Determinamos de manera aleatoria que elementos sacamos de la muestra
-filas <- sample(x = rownames(HMDA),200)
+filas <- sample(x = rownames(HMDA),300)
 filas
 
 #Dividimos la muestra en dos
@@ -228,14 +228,3 @@ table(prediccion_deny, HMDA_test$deny2)
 mean(prediccion_deny == HMDA_test$deny2)
 mean(prediccion_deny != HMDA_test$deny2)
 
-
-#Construimos una tabla con el valor real de la variable dependiente
-prediccion2 <-  cbind(prediccion, caschool_test$testscr)
-prediccion2
-
-#colocamos un nombre a la ultima columna
-colnames(prediccion2)
-
-colnames(prediccion2)[4] <- "real"
-
-prediccion2
