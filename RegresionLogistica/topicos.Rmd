@@ -1,0 +1,263 @@
+---
+title: "Regresión logística: tópicos finales"
+author: "Kamal Romero"
+date: "`r format(Sys.time(), '%B, %Y')`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+  html_document: 
+    toc: true
+    number_sections: true
+    theme: "yeti"
+  md_document:
+    variant: markdown_github
+  pdf_document: 
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+pacman::p_load("AER", "sandwich", "jtools", "huxtable", "caret", "mfx", "stargazer", "caTools", "ROCR")
+```
+
+# Efectos marginales
+
+Debido a la naturaleza no lineal del modelo, no es posible interpretar los coeficientes directamente 
+como en el modelo lineal, dado que el efecto marginal de la variable $x_i$ sobre la variable dependiente
+$y$, $(E(y|x))$ deja de ser una constante $(\beta_i)$ y pasa a ser dicha constante multiplicada por un factor de escala no trivial. Desarrollamos brevemente esta situación a continuación.
+
+En un modelo lineal la probabilidad condicionada a las características viene dada por:
+
+$$P(y=1|\mathbf{x})=\beta_0+\beta_1 x_1+\ldots+\beta_n x_n=\mathbf{x\beta}$$
+donde \mathbf{x} es una matriz de tamaño $n\times k$, y $\beta$ un vector de tamaño $k\times 1$ 
+
+Mientras que en la regresión logística 
+
+$$P(y=1|\mathbf{x})=G(\beta_0+\beta_1 x_1+\ldots+\beta_n x_n)=G(\mathbf{x\beta})$$
+
+Como se observa la combinación lineal de regresores o características $(\mathbf{x\beta})$ afecta a la variable
+dependiente a través la función link $G()$, que en nuestro caso es la función logística. En el caso de la regresión lineal la función link es la función identidad, de ahí que los $\beta$'s se interpreten directamente como el efecto de un cambio en $x_i$ sobre $y$
+
+Si deseamos obtener los efectos parciales o marginales en la regresión lineal, simplemente calculamos 
+$\frac{\partial{y}}{\partial{x_i}}=\beta_i$
+
+Mientras que en la regresión logística
+$$\frac{\partial{y}}{\partial{x_i}}=\frac{\partial{G(\mathbf{x\beta})}}{\partial{x_i}}\beta_i=g(\mathbf{x\beta})\beta_i$$
+donde $G()$ es la función de distribución acumulada y $g()$ la función de densidad. 
+
+Para calcular el efecto marginal debemos conocer no solo $\beta_i$ sino $\mathbf{x\beta}$ evaluado en $g()$
+
+No obstante como se observa en la expresión anterior el signo de $\beta$ sigue representando la dirección
+del efecto marginal, por lo que podremos afirmar que los dos factores y la edad poseen un efecto positivo 
+sobre la valoración global
+
+El cálculo de los efectos marginales plantea el problema de que $x$'s emplear en el cálculo de la expresión anterior. Se puede optar por el empleo del _efecto marginal promedio_, que citando el texto de Nick Huntington-Klein [The Effect](https://theeffectbook.net/ch-StatisticalAdjustment.html#getting-fancier-with-regression) consiste en _"El efecto marginal medio calcula el efecto marginal de cada observación individual, utilizando los predictores de esa observación. Luego, con el efecto marginal de cada observación individual, se obtiene la media para obtener el efecto marginal medio. !Eso es todo¡. Entonces se tiene la media del efecto marginal en toda la muestra, lo que da una idea del efecto marginal representativo"_. Usaremos esto en detrimento del efecto marginal _en el promedio_, el cual implicaría sustituir los $x$ por sus valores promedios.
+
+El efecto marginal promedio se calcula del siguiente modo
+
+$$\frac{1}{n}\sum_{i=1}^n g(\mathbf{x_i\hat{\beta}})=\mathbf{\hat{\beta}}g(\overline{\mathbf{x\hat{\beta}}})$$
+La expresión anterior no es más que la media de la combinación lineal con la estimación de $\beta$, evaluado en la función logística. 
+
+Vamos a usar el ejemplo del libro, en la implementación abajo mostrada queda más clara esta idea.
+
+Estimamos primero el modelo del libro
+
+```{r modelo01_1, echo=FALSE, include=FALSE}
+data("HMDA")
+HMDA$deny2 <- as.numeric(HMDA$deny) - 1
+```
+
+```{r modelo01_2}
+modelo_cap11_06 <- glm(data = HMDA, deny2 ~ pirat + afam, family = binomial(link = logit))
+summ(modelo_cap11_06, digits = 3, robust = "HC1")
+```
+
+A contonuación calculamos los efectos marginales "a mano"
+
+
+```{r marginal1}
+fav <- mean(dlogis(predict(modelo_cap11_06)))
+efectos.marginales <- fav*modelo_cap11_06$coefficients
+efectos.marginales
+efectos.marginales[2]
+efectos.marginales[3]
+```
+
+En lugar de calcular manualmente los efectos marginales, el paquete `mfx` a través de su función `logitmfx`
+nos da el logit estimado y en lugar de presentar los $\beta$'s nos muestra directamente los efectos marginales. Como deseamos el _efecto marginal promedio_, debemos usar el argumento `atmean` y asignarle el valor `FALSE`, indicando que no deseamos el efecto marginal _en el promedio_.
+
+```{r marginal2}
+modelo_cap11_06_marg <- logitmfx(data = HMDA, deny2 ~ pirat + afam, atmean = FALSE, robust = TRUE)
+modelo_cap11_06_marg
+```
+Observamos que el proceso manual no captura bien el efecto marginal de la variable categórica afroamericano.
+
+Según estos resultados, un incremento de una unidad del ratio pagos sobre ingreso incrementa la probabilidad de no obtener el crédito en un 52%, mientras que el ser afroamericano aumenta la probabilidad de no recibir el crédito en un 17%.
+
+# Probabilidades relativas
+
+Una manera más sencilla de interpretar los coeficientes es calculando la exponencial de los mismos.
+Recordemos que estamos estimando la siguiente relación:
+
+$$P(valoracion = 1 | \mathbf{x} ) = \frac{1}{1+ e^{-\mathbf{x\beta}}}$$
+Escribiendo el denominador de la expresión como:
+
+$$1+\frac{1}{e^\mathbf{x\beta}}$$
+podemos escribir la probabilidad condicionada de una valoración alta como:
+
+$$\begin{align}
+P(valoracion = 1 | \mathbf{x} ) = & \frac{1}{1+\frac{1}{e^\mathbf{x\beta}}} \\
+                                 = & \frac{1}{\frac{1+e^\mathbf{x\beta}}{e^\mathbf{x\beta}}}\\
+                                 = & \frac{e^\mathbf{x\beta}}{1+e^\mathbf{x\beta}}
+\end{align}$$
+
+por lo que la probabilidad condicionada de una valoración baja sería:
+
+$$\begin{align}
+P(valoracion = 0 | \mathbf{x} ) = & 1- \frac{e^\mathbf{x\beta}}{1+e^\mathbf{x\beta}} \\
+                                 = & \frac{1}{1+e^\mathbf{x\beta}}
+\end{align}$$
+
+Con lo anterior obtenemos el ratio de probabilidades
+
+$$\begin{align}
+\frac{P(valoracion = 1 | \mathbf{x} )}{P(valoracion = 0 | \mathbf{x} )} = & 
+\frac{\frac{e^\mathbf{x\beta}}{1+e^\mathbf{x\beta}}}{\frac{1}{1+e^\mathbf{x\beta}}}
+                                 = & e^\mathbf{x\beta}
+\end{align}$$
+
+El exponencial de los coeficientes nos indican que tan más probable es en términos relativos que el crédito sea denegado cuando varía $x_i$ en una unidad manteniendo el restos de la $x$'s constante
+
+```{r risk_ratio}
+modelo_cap11_06_or <- exp(coef(modelo_cap11_06))
+stargazer(modelo_cap11_06, type="text", coef=list(modelo_cap11_06_or), p.auto=FALSE)
+```
+
+Manteniendo el resto de variables constante, para una persona afroamericana es 3,57 veces más probable que el crédito sea denegado.
+
+# Evaluación del modelo: Matriz de confusión y curva ROC
+
+## Matriz de confusión
+
+Ya hemos analizado la matriz de confusión en clase y alguna de las métricas de bondad de ajuste de el modelo que se pueden obtener de la misma. Ahora vamos a repetir el ejercicio de clase y obtendremos la matriz y las métricas a través de la librería `caret`
+
+Dividimos la muestra, dejamos algunas observaciones fuera, para luego predecir con las características de estas observaciones. Determinamos de manera aleatoria que elementos sacamos de la muestra.
+
+```{r train_test_01}
+set.seed(1234)
+filas <- sample(x = rownames(HMDA),300)
+filas
+```
+
+Dividimos la muestra en dos
+
+```{r train_test_02}
+HMDA_train <- HMDA[-as.numeric(filas),]
+HMDA_test <- HMDA[as.numeric(filas),]
+
+```
+
+
+Estimamos con los datos restantes
+
+```{r train_test_03}
+modelo_cap11_train <- glm(data = HMDA_train, deny2 ~ pirat + afam, family = binomial(link = logit))
+summ(modelo_cap11_train, digits = 3, robust = "HC1")
+```
+
+
+Predecimos los valores de las observaciones que hemos dejado fuera
+
+```{r train_test_04}
+prediccion <-  predict(object = modelo_cap11_train, newdata = HMDA_test, type = "response")
+prediccion
+```
+
+Convertimos las probabilidades en variables binarias, asumimos que una probabilidad estimada mayor a 0,5 indica que se deniega el crédito a esa persona
+
+```{r train_test_05}
+prediccion_deny <- ifelse(prediccion > 0.5, 1, 0)
+prediccion_deny
+```
+
+Obtenemos la matriz de confusión
+
+```{r train_test_06}
+table(HMDA_test$deny2)
+table(prediccion_deny, HMDA_test$deny2)
+
+```
+
+
+La precisión (ACC) es del 87,7% (aciertos sobre el total 263/300), la tasa de acierto de las concesiones de crédito es del 100% y las no concesiones del 7,5% (3/40)
+
+Vamos a obtener esta información con la función `confusionMatrix` de la librería `caret`, pero antes debemos realizar unos pequeños cambios
+
+La función `confusionMatrix` asume que la variable dependiente (respuesta) es un factor, así como la predicción. Esto implica que debemos usar la columna original de la base de datos `HMDA` que se encuentra codificada con una variable binaria `yes` y `no`, y cambiar la variable que hemos usado para construir la matriz anterior y convertirla en factor:
+
+```{r confusion 01}
+prediccion_deny2 <- ifelse(prediccion > 0.5, "yes", "no")
+prediccion_deny2 <- as.factor(x = prediccion_deny2)
+```
+
+Ahora pasamos a construir la matriz
+
+```{r confusion 02}
+confusionMatrix(prediccion_deny2, HMDA_test$deny, positive = "yes")
+```
+
+Vemos como obtenemos la misma información de antes además de otras métricas
+
+El tomar 0,5 como límite para determinar la probabilidad de una valoración alta es una decisión estándar pero arbitraria. Existen maneras de determinar si esta tasa es la adecuada empleando varios criterios, a continuación mostramos como varía la precisión del modelo con distintos limites.
+
+```{r cut, warning = FALSE, fig.height = 6, fig.width = 6, fig.align = "center"}
+prediccion_th <- prediction(fitted(modelo_cap11_06), HMDA$deny)
+precision <- performance(prediccion_th,'acc')
+ac.val = max(unlist(precision@y.values))
+th = unlist(precision@x.values)[unlist(precision@y.values) == ac.val]
+plot(precision)
+abline(v=th, col='grey', lty=2)
+unname(th)
+```
+
+En la gráfica anterior se representa en el eje vertical la precisión (ACC) del modelo y en el eje horizontal la _probabilidad de corte_ a partir de la cual definimos cuando se considera que se deniega un crédito. El objetivo es buscar una probabilidad de corte que maximice la precisión del modelo, dicho valor no tiene porque ser único.
+
+En la gráfica se observa que el límite que maximiza la precisión es `r round(unname(th),2)` que viene dado por la variable `th`. La precisión (ACC) del modelo es ahora `r round(ac.val,2)`  Repetimos la elaboración de la matriz de confusión con ese límite
+
+```{r confusion 03}
+prediccion_deny3 <- ifelse(prediccion > unname(th), "yes", "no")
+prediccion_deny3 <- as.factor(x = prediccion_deny3)
+```
+
+Ahora pasamos a construir la matriz
+
+```{r confusion 04}
+confusionMatrix(prediccion_deny3, HMDA_test$deny, positive = "yes")
+```
+
+La precisión aumenta levemente. Dicho incremento se explica por un aumento de la tasa de aciertos de créditos denegados de 7,5% a 10%, mientras la tasa de aciertos de créditos concedidos cae levemente de 100% a 98,85%.
+
+## Curva ROC
+
+A continuación se muestra la curva ROC
+
+```{r roc, warning = FALSE, fig.height = 6, fig.width = 6, fig.align = "center"}
+plot(performance(prediccion_th,'tpr','fpr'),colorize=T)
+abline(0,1,lty=2, col='grey')
+lines(x=c(0, 1), y=c(0, 1), col="grey", lty=2)
+```
+
+
+Calculamos el AUC o área bajo la curva ROC
+
+```{r auc}
+auc = performance(prediccion_th, "auc")
+auc = unlist(auc@y.values)
+auc
+```
+
+Se obtiene un AUC de `r round(auc,2)`, que es mayor al límite de 0,5 que representa una clasificación hecha al azar, pero la forma de la curva ROC, nos indica que el modelo tiene margen de mejora. Recordar que una curva ROC lo más pegada al eje vertical y al eje superior, y un AUC cercano a uno, indican una mejor clasificación.
+
+
